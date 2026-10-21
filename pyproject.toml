@@ -1,0 +1,30 @@
+[project]
+name = "kerb"
+version = "0.1.0"
+description = "An open household screen-time standard and Home Assistant integration"
+requires-python = ">=3.13"
+license = { text = "MIT" }
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+addopts = "-p no:cacheprovider"
+
+[tool.coverage.run]
+source = ["kerb_core", "custom_components/kerb"]
+
+[tool.ruff]
+line-length = 130
+target-version = "py313"
+
+[tool.ruff.format]
+indent-style = "tab"
+
+[tool.ruff.lint]
+select = ["F", "E9", "B", "UP", "I"]
+ignore = ["UP017"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["custom_components", "kerb_core"]
+force-sort-within-sections = true

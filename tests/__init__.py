@@ -1,1 +1,1 @@
-"""Tests for Google Family Link integration.""" 
+"""Tests for Google Family Link integration."""

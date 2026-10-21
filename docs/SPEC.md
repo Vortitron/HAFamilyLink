@@ -105,6 +105,8 @@ Rules.
 - Overrides are idempotent on id and immutable once issued. Cancelling writes a compensating record, it does not delete.
 - `results` carries one entry per enforcer that was asked. `mode` says how the enforcer actually did it: `pause`, `zero_allowance`, `network`, `power`, `manual`. If an enforcer emulated a pause by zeroing the allowance, it says so and attaches a `restore` snapshot so the schedule can be put back.
 - `status` is `confirmed` only when every asked enforcer has read back the new state. `partial` means some did. `applied` means the writes were sent and the confirmation window has not expired. `failed` means nothing was confirmed within the window.
+- A `failed` lock is still a decision in force. The child shows as locked and the enforcement sensor shows degraded, so a parent sees that the lock did not land rather than a child who looks free. Only cancellation and expiry end a decision.
+- The controller never takes an enforcer's word for `confirmed`. It downgrades it to `applied` and does its own read-back.
 
 ### 3.6 Ledger
 
@@ -218,8 +220,8 @@ class Enforcer(Protocol):
     capabilities: Capabilities
 
     async def discover(self) -> list[DeviceRef]: ...
-    async def apply(self, override: Override) -> EnforcerResult: ...
-    async def revert(self, override: Override) -> EnforcerResult: ...
+    async def apply(self, override: Override, device: DeviceRef) -> EnforcerResult: ...
+    async def revert(self, override: Override, device: DeviceRef) -> EnforcerResult: ...
     async def read_state(self, device: DeviceRef) -> EnforcedState: ...
     async def usage(self, device: DeviceRef, day: date) -> list[UsageSample]: ...
     async def set_policy(self, device: DeviceRef, policy: Policy) -> EnforcerResult: ...
@@ -228,7 +230,9 @@ class Enforcer(Protocol):
     async def health(self) -> Health: ...
 ```
 
-Capability flags: `lock_now`, `lock_emulated`, `unlock_now`, `grant_minutes`, `daily_allowance`, `allowed_windows`, `app_block`, `app_limit`, `usage_read`, `usage_per_app`, `request_queue`, `network_block`, `power_off`, `lossy_per_device`. Plus two numbers: `poll_interval_s` and `confirmation_window_s`.
+`apply` and `revert` are called once per enforcer and device pair and answer for that device alone, so one enforcer can govern several devices and still return one result per device.
+
+Capability flags: `lock_now`, `lock_emulated`, `unlock_now`, `grant_minutes`, `daily_allowance`, `allowed_windows`, `app_block`, `app_limit`, `usage_read`, `usage_per_app`, `request_queue`, `network_block`, `power_off`, `lossy_per_device`, `manual`. Plus two numbers: `poll_interval_s` and `confirmation_window_s`.
 
 Rules every enforcer follows.
 

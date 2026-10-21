@@ -55,6 +55,11 @@
     "lossy_per_device": {
       "type": "boolean"
     },
+    "manual": {
+      "type": "boolean",
+      "default": false,
+      "description": "The enforcer only asks a parent to act in a vendor app and waits for a done button. Mode is manual and confirmation is the parent's press."
+    },
     "poll_interval_s": {
       "type": "integer",
       "minimum": 1
