@@ -51,10 +51,6 @@ home-assistant_v2.db
 .cloud/
 .google.token
 
-# Family Link specific
-familylink_cookies.json
-*.cookies
-
 # OS
 .DS_Store
 Thumbs.db
