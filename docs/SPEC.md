@@ -523,7 +523,7 @@ noiwid/HAFamilyLink and noiwid/HAFamilySafety (MIT) for the vendor adapters this
 
 ## Appendix A. Vocabularies
 
-The schemas are normative. This list is a reading aid and is regenerated from them.
+The schemas are normative. This list is a reading aid kept in step with them by hand; tests/test_schemas.py checks the schemas, not this table.
 
 | Where | Values |
 |---|---|
