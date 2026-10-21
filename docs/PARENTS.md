@@ -97,4 +97,10 @@ Home Assistant cannot hide entities from one user and show them to another. Thre
 
 ## What Kerb stores
 
-An age band, device names, which entities belong to which device, the daily ledgers (allowance, grants, usage, locks) for 31 days, and the hash of the PIN. No location, no date of birth, no vendor credentials. Nothing is sent anywhere.
+An age band, device names, which entities belong to which device, the daily ledgers (allowance, grants, usage, locks) and the lock and grant records for 31 days, and the hash of the PIN. After 31 days a day's ledger is deleted outright; nothing is summarised or kept. No location, no date of birth, no vendor credentials. Nothing is sent anywhere.
+
+Deleting a child's entry removes everything Kerb holds about them at once. Reloading or restarting keeps it.
+
+Backups. All of this lives in `.storage/kerb.state`, which is inside every Home Assistant backup. A backup is therefore a record of your child's days. Encrypt your backups and keep them where only you can read them. Deleting a child does not reach into backups you already made.
+
+Your child can see it. The ledger is written to be shown: every line says what was granted or used, by whom and why. A kiosk dashboard fed by the sensors gives them their remaining time, and you can read them the ledger on request. For teenagers it is worth agreeing the rules together; Kerb records the decision, it does not make it.

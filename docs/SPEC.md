@@ -39,7 +39,7 @@ The hard rule: the standard models what the parent wants, not what any vendor of
 
 ## 3. Data model
 
-Seven core objects plus three supporting ones. All identifiers are UUIDs minted locally. Vendor identifiers live in the adapter's own store, never in the core objects. Times are RFC 3339 with explicit offsets. Durations are whole minutes in the parent-facing surface and whole seconds in usage samples. Weekdays use ISO numbering, Monday is 1. Unknown properties are allowed and preserved. Extensions use an `x_` prefix.
+Seven core objects plus three supporting ones. All identifiers are UUIDs minted locally. Vendor identifiers live in the adapter's own store, never in the core objects. Times are RFC 3339 with explicit offsets. Durations are whole minutes in the parent-facing surface and whole seconds in usage samples. Weekday lists are seven-entry arrays, index 0 is Monday (ISO weekday 1). Unknown properties are allowed and preserved: a conforming implementation reads them, keeps them and writes them out unchanged, and the reference controller does exactly that on every object it stores. Extensions use an `x_` prefix. The schemas in schemas/ are normative; where this prose and a schema disagree, the schema wins. See Appendix A.
 
 ### 3.1 Household
 
@@ -61,9 +61,12 @@ The standing rules for one child.
 - `windows`: up to four allowed windows per weekday, 30 minute granularity, because that is the coarsest vendor UI.
 - `bedtime`: a window per weekday during which the child is locked.
 - `rating_ceiling`: an attributed claim (organisation, value, source, date), never a bare value.
-- `app_rules`: list of app key plus effect. Effects: `allow_always` (works while locked), `allow` (counts against allowance), `count_half`, `count_double`, `require_approval`, `block`.
-- `tag_rules`: same effects keyed on a community tag id. A per-app rule beats a tag rule.
+- `app_rules`: list of app key plus effect. Effects: `allow_always` (works while locked, recorded at rate 0), `allow` (counts against allowance), `count_half`, `count_double`, `require_approval`, `block`.
+- `tag_rules`: same effects keyed on a community tag id. A per-app rule beats a tag rule. Among several matching tags the strictest wins.
 - `grant_cap_minutes_per_day`: optional ceiling on ad hoc grants.
+- `profile_ref`: optional, the community profile this policy started from.
+
+Per-app daily limits and time-of-day tag windows ("block chat after 19:00") are phase 3. They are not in the 0.1 schema, so a rule a parent writes cannot silently vanish on save.
 
 Policy is per child, not per device. Adapters that can only express per-device limits declare `lossy_per_device` and receive the same value for each device. A smarter split is an open decision (section 11).
 
@@ -103,8 +106,10 @@ Rules.
 - Every override has an expiry. The default is end of the local day. A lock switch turned on creates a lock that expires at end of day. Open-ended rules are policy changes, not overrides.
 - The newest lock wins over any grant. A grant extends today's remaining time only, never the standing allowance.
 - Overrides are idempotent on id and immutable once issued. Cancelling writes a compensating record, it does not delete.
-- `results` carries one entry per enforcer that was asked. `mode` says how the enforcer actually did it: `pause`, `zero_allowance`, `network`, `power`, `manual`. If an enforcer emulated a pause by zeroing the allowance, it says so and attaches a `restore` snapshot so the schedule can be put back.
+- `scope.type` of `device`, `app` or `tag` requires the matching `device_id`, `app` or `tag`. `minutes` is required for `grant` and `allowance_today`. `expires_at` is later than `starts_at`.
+- `results` carries one entry per enforcer that was asked (schema enforcer_result.json). `mode` says how the enforcer actually did it: `pause`, `zero_allowance`, `network`, `power`, `manual` for locks and unlocks, `bonus` for a grant, `allowance` for `allowance_today`. A result's `status` is `requested`, `applied`, `confirmed`, `failed` or `unknown`; `unknown` means the enforcer could not be trusted or could not read the device. If an enforcer emulated a pause by zeroing the allowance, it says so and attaches a `restore` snapshot so the schedule can be put back.
 - `status` is `confirmed` only when every asked enforcer has read back the new state. `partial` means some did. `applied` means the writes were sent and the confirmation window has not expired. `failed` means nothing was confirmed within the window.
+- An unlock ends the locks it covers: they are marked `cancelled` with the unlock as the compensating record. A lock whose time runs out is marked `expired`. When a lock ends, the controller releases only the enforcer and device pairs no other lock in force still holds, so an hour's lock expiring inside bedtime, or under a later rest-of-day lock, frees nothing.
 - A `failed` lock is still a decision in force. The child shows as locked and the enforcement sensor shows degraded, so a parent sees that the lock did not land rather than a child who looks free. Only cancellation and expiry end a decision.
 - The controller never takes an enforcer's word for `confirmed`. It downgrades it to `applied` and does its own read-back.
 
@@ -115,14 +120,16 @@ The running account for one child for one day. Entries are append-only:
 - `allowance`: the day's base minutes from policy, or from an `allowance_today` override.
 - `grant`: minutes added, with source, reason and actor.
 - `penalty`: minutes removed, same fields.
-- `usage`: minutes consumed, per device and per app when known, with a `rate` (1.0 by default, 0.5 for `count_half`, 2.0 for `count_double`).
+- `usage`: minutes consumed, per device and per app when known, with a `rate` (1.0 by default, 0.5 for `count_half`, 2.0 for `count_double`, 0.0 for `allow_always`: the minutes are recorded so the child's day is complete, but cost nothing).
 - `lock`: a block in force, with scope and expiry.
 
 Remaining today is allowance plus grants minus penalties minus weighted usage. Where no adapter can measure usage, the ledger charges elapsed minutes while a device is known to be on and not locked. The ledger entry records which rule it applied and whether per-app usage was available, so the dashboard can say "charged at full rate, this device cannot report per-app usage".
 
 ### 3.7 Usage sample
 
-A fact, not a policy. Fields: child id, device id, optional app key, interval start and end, seconds, source enforcer, observed at. Samples are kept for a retention period (default 31 days) and then summarised to daily totals per child. Zero retention is a valid setting.
+A fact, not a policy. Fields: child id, device id, optional app key, interval start and end, seconds (never more than end minus start), source enforcer, observed at.
+
+Retention in 0.1 is simple and honest: the reference controller does not persist usage samples at all. It charges minutes into the day ledger as they happen, and keeps whole day ledgers and overrides for the retention period (`usage_retention_days`, default 31), then deletes them. Nothing is summarised first. A controller that does summarise before deleting conforms too, as long as the summary carries no app keys. Zero retention is a valid setting.
 
 ### 3.8 Request
 
@@ -140,13 +147,15 @@ psn:CUSA00001
 nintendo:0100D71004694000
 steam:252950
 igdb:1905
+apple:1234567890
+other:anything-without-whitespace
 ```
 
-`igdb` is the canonical cross-platform key when known. Unknown apps are auto-created as stubs from the store id so usage is never dropped while waiting for a human to link them.
+`igdb` is the canonical cross-platform key when known. `apple` is reserved for an iOS companion. `other` is for an app no store knows, such as a sideloaded or self-built one. Unknown apps are auto-created as stubs from the store id so usage is never dropped while waiting for a human to link them.
 
 ### 3.10 Rating claim
 
-Organisation (`PEGI`, `ESRB`, `USK`, `IARC`, `other`), value, region, source URL, retrieved date. Ratings are claims with provenance, never truth, because no rating body offers a lawful bulk source.
+Organisation (`PEGI`, `ESRB`, `USK`, `IARC`, `ACB`, `CERO`, `other`), value, region, source URL, retrieved date. Ratings are claims with provenance, never truth, because no rating body offers a lawful bulk source.
 
 ### 3.11 Capabilities
 
@@ -156,7 +165,9 @@ What an enforcer declares about itself. See section 5.
 
 ### 4.1 Versioning
 
-Versions are `major.minor`. Schemas carry `$id` with the version in the path. Minor versions only add optional fields. Major versions may remove or change meaning. The first published version is 0.1, marked experimental until two independent implementations conform.
+Versions are `major.minor`. Schemas carry `$id` with the version in the path. From 1.0 on, minor versions only add optional fields, major versions may remove or change meaning, and `$id` values are fixed. While the major version is 0 anything may change between commits, including `$id`, whose kerb.dev domain is a placeholder. Every schema change is recorded in schemas/CHANGELOG.md. The first published version is 0.1, marked experimental until two independent implementations conform.
+
+Conformance is judged against the schemas plus a short list of rules JSON Schema cannot express: `expires_at` later than `starts_at`, a usage sample's `seconds` no more than its interval, a window's `start` not equal to its `end`, and every timestamp carrying an explicit offset (the schemas enforce the last one with a pattern). The phase 3 conformance suite tests all four.
 
 ### 4.2 Verbs
 
@@ -174,9 +185,10 @@ list_requests(child)
 respond_request(request_id, approve | deny, minutes)
 reconcile(child | all)
 get_capabilities(enforcer)
+delete_child(child)
 ```
 
-`reconcile` forces a read-back from every enforcer. It runs after a restart and after a session repair.
+`reconcile` forces a read-back from every enforcer. It runs after a restart and after a session repair. `delete_child` removes every record the controller holds about a child: the child, their devices, overrides and ledgers. Nothing about a child outlives the parent's decision to remove them.
 
 ### 4.3 Events
 
@@ -213,7 +225,7 @@ Field names mirror the Matter Content Control cluster where a match exists (`Scr
 
 ## 5. Enforcer interface
 
-An enforcer is a Python class the integration loads, or any process speaking the same JSON over the host's event bus or MQTT. It declares what it can do, then does it, then proves it did it.
+An enforcer is a Python class the integration loads. It declares what it can do, then does it, then proves it did it. A transport for out-of-process enforcers (MQTT or the host's event bus) is on the roadmap (section 9, phase 3) and is not specified in 0.1; until it is, an adapter in another language wraps itself in a small Python class.
 
 ```python
 class Enforcer(Protocol):
@@ -232,7 +244,16 @@ class Enforcer(Protocol):
 
 `apply` and `revert` are called once per enforcer and device pair and answer for that device alone, so one enforcer can govern several devices and still return one result per device.
 
-Capability flags: `lock_now`, `lock_emulated`, `unlock_now`, `grant_minutes`, `daily_allowance`, `allowed_windows`, `app_block`, `app_limit`, `usage_read`, `usage_per_app`, `request_queue`, `network_block`, `power_off`, `lossy_per_device`, `manual`. Plus two numbers: `poll_interval_s` and `confirmation_window_s`.
+The objects on this interface each have a schema in schemas/.
+
+- `DeviceRef` (device_ref.json): what the controller hands over about a device. `device_id`, `display_name`, `platform` and `power_off_allowed`. Nothing about the child.
+- `Override` (override.json): the decision being applied or reverted. The enforcer reads `kind`, `scope`, `minutes` and `id`, and is idempotent on `id`.
+- `EnforcerResult` (enforcer_result.json): the answer. `status` is `requested` (queued, nothing sent yet), `applied` (sent), `failed` (the vendor refused or the call raised) or `unknown` (cannot say). An enforcer never returns `confirmed`; only the controller writes that, after its own read-back, and downgrades any `confirmed` it receives to `applied`. `mode` says how it was done. `restore` carries whatever is needed to undo an emulation.
+- `EnforcedState` (enforced_state.json): what `read_state` saw. `locked` is `true`, `false` or `null`, and `null` means unknown: the controller treats it as unknown and never as free. `in_use` is `true` only when the enforcer knows the device is being used now; it is how minutes are charged for devices with no usage API. `detail` is shown to the parent.
+- `Health` (health.json): `status` and a `reason`. The controller trusts `healthy` and `degraded` read-backs, and treats `unknown` and `revoked` as unknown state. An unhealthy enforcer is never asked to write.
+- `Capabilities` (capabilities.json): below.
+
+Capabilities carry the enforcer's `enforcer` name and conformance `level`, the flags `lock_now`, `lock_emulated`, `unlock_now`, `grant_minutes`, `daily_allowance`, `allowed_windows`, `app_block`, `app_limit`, `usage_read`, `usage_per_app`, `request_queue`, `network_block`, `power_off`, `lossy_per_device`, `manual`, two numbers `poll_interval_s` and `confirmation_window_s`, and free-text `notes`. The controller derives the lock mode from the flags: `manual`, then `lock_now` without network or power (pause), `lock_emulated` (zero_allowance), `network_block`, `power_off`.
 
 Rules every enforcer follows.
 
@@ -280,8 +301,9 @@ A repair issue is raised whenever an enforcer's health goes to unknown or revoke
 | Remaining today | sensor, minutes | Ledger balance. Attribute `confidence`: confirmed, assumed, stale. |
 | Used today | sensor, minutes | Weighted usage. Attribute lists devices that could not report per-app usage. |
 | Allowance today | number, 0 to 1440 | Writes an `allowance_today` override. Mirrors Matter SetScreenDailyTime. |
-| Status | sensor | free, locked, exhausted, bedtime, unknown. |
-| Enforcement | sensor | confirmed, partial, degraded, unknown. |
+| Status | sensor | free, locked, exhausted, bedtime, unknown. Exhausted while the allowance lock is in force. |
+| Enforcement | sensor | confirmed, pending, partial, degraded, unknown. Pending while writes await read-back or a parent's done; degraded for a failed lock or an unhealthy enforcer. |
+| PIN | text | Takes the PIN once and arms the dashboard for that guardian for five minutes. Always reads empty. |
 | Pending requests | sensor | Count, with the queue as attributes. |
 | Grant 15, 30, 60 | button | One-tap bonus. |
 | Approve oldest, Deny oldest | button | For vendor request queues. |
@@ -357,7 +379,7 @@ HA has no per-user entity ACL. Three mitigations, all documented plainly:
 
 1. Children should not have HA logins. A child dashboard is a view-only kiosk fed by the sensors.
 2. Lock, unlock and grant refuse calls from HA users not listed as guardians and from contexts with no user. Automations run as the owner and are trusted.
-3. An optional PIN, mirroring Matter AddBonusTime. Missing or wrong PIN is refused and logged.
+3. An optional PIN, mirroring Matter AddBonusTime. Missing or wrong PIN is refused and logged. Service calls carry it in `pin`. Dashboard entities cannot, so a guardian enters it on the PIN text entity, which arms the other entities for that guardian for five minutes. Confirming a manual step (the done button, `kerb.confirm_manual`) needs the guardian check but never the PIN: it decides nothing.
 
 ## 7. Community layer
 
@@ -379,7 +401,7 @@ New tags are proposed through an issue. Free text is accepted into a separate ta
 
 MusicBrainz rules. One vote per household per tag per app key, up or down. A tag shows when its net score is positive. Caution tags additionally need evidence (a store URL or screenshot reference) and at least three distinct contributors before they show. Value tags accept a note. Visible tags are capped at ten per app, Steam's lesson. Early data is seeded from IGDB genres and age ratings, stored as attributed claims.
 
-Every write carries a pseudonymous household id, client name and version, so a misbehaving client or household can be rate limited or blocked without touching past votes. Edits are logged and revertable. A right-to-forget call deletes a household's votes and profile submissions in one request.
+Every write carries a contributor id, client name and version, so a misbehaving client or household can be rate limited or blocked without touching past votes. The contributor id is a random UUID the client mints locally when the parent turns sharing on. It is separate from `Household.id`, never derived from it, and the parent may rotate it at any time; past votes stay but are no longer linked to the new id. Votes and profiles are the only two objects that leave the house and both refuse any property the schema does not name (`x_` excepted), so no client can attach a child's name or usage by accident. `evidence` is a store or IGDB page, never an image, and the server does not accept uploads in 0.1. `note` and profile text must not contain names; the server may strip or reject them. Edits are logged and revertable. A right-to-forget call deletes a contributor's votes and profile submissions in one request.
 
 ### 7.3 Profiles
 
@@ -391,7 +413,7 @@ Data under ODbL. Schemas and code under MIT. Vocabulary under CC BY-SA. Reads ar
 
 ### 7.5 How it reaches the parent
 
-With a tag source enabled, each app in a child's app list gains tags and policy can say "always allow anything tagged educational" or "block anything tagged chat_with_strangers after 19:00". Tag effects such as `count_half` apply in the local ledger only and are gated on `usage_per_app`. Where an enforcer cannot report per-app usage the child sensor says so in attributes.
+With a tag source enabled, each app in a child's app list gains tags and policy can say "always allow anything tagged educational" or "block anything tagged chat_with_strangers". Time-of-day tag rules ("after 19:00") are phase 3. Tag effects such as `count_half` apply in the local ledger only and are gated on `usage_per_app`. Where an enforcer cannot report per-app usage the child sensor says so in attributes.
 
 ## 8. Privacy and security
 
@@ -399,12 +421,21 @@ Children's data is the sensitive asset, so the defaults are the conservative one
 
 - Nothing leaves the house except app keys and votes to the community service, and only if the parent opts in. No child names, no usage, no device ids, no age beyond a band.
 - Age band, never date of birth. No location. Family Link exposes location and this project does not read it.
-- Usage samples are kept 31 days by default, then summarised to daily totals. Zero retention is valid.
+- Day ledgers and overrides are kept 31 days by default, then deleted. Usage samples are not persisted by the reference controller. Zero retention is valid. See 3.7.
 - Logs redact app and game titles unless debug logging is on, because a per-title log is a behaviour record of a child.
-- The standard carries no credentials. Enforcers hold them in their own config entries. The README states that HA backups contain session material for the vendor paths.
+- The standard carries no credentials. Enforcers hold them in their own config entries. The README and the parent guide state that HA backups contain Kerb's own storage file (ledgers with app keys per child, the PIN hash, guardian ids) and, once vendor paths exist, their session material, so backups are children's data and must be protected as such.
 - Fail closed for state, fail honest for control. Unknown is shown as unknown and raises a repair.
 - Every override logs who or what created it. The ledger is the audit trail a parent can show a child.
 - Vendor terms. The README states that the Family Link and Family Safety paths rely on third-party integrations that may breach vendor terms and could stop working. Network and power are the recommended default.
+
+### 8.1 The child
+
+The child is the person the data is about, and the standard owes them a position too.
+
+- What is recorded: an age band, device names, which minutes were used on which device (and app, where known), what was granted and why, and every lock with its reason. Nothing else.
+- Visible on request. The ledger is written so it can be shown to the child in full: every line says who did what and why. The HA integration exposes it through the sensors a kiosk dashboard can read. A controller that hides the ledger from the child does not conform in spirit.
+- For `13_to_15` and `16_plus`, UK guidance expects the young person's own view to count. The standard cannot enforce a conversation, but a profile for those bands should default to fewer blocks and more counting, and a parent-facing guide should say so.
+- Leaving the household: `delete_child` (4.2) removes every record about the child. There is no partial retention. Community sharing never includes anything per child, so there is nothing to delete there.
 
 ## 9. Roadmap
 
@@ -432,8 +463,9 @@ Success: Andy presses one button and every child device drops off the network an
 
 1. Weekly allowance and windows written through to vendors that accept them, with read-back.
 2. Request queue entities and approve or deny.
-3. Per-app rules and tag rules in the local ledger, with honest attributes.
-4. A PLATFORMS.md refresh and a conformance test suite any enforcer can run.
+3. Per-app rules and tag rules in the local ledger, with honest attributes: an options field or service to set them per child, a now-playing observer so the controller knows which app is running, then per-app daily limits and time-of-day tag windows added back to the schema.
+4. A PLATFORMS.md refresh and a conformance test suite any enforcer can run, covering the rules JSON Schema cannot express (4.1).
+5. An out-of-process enforcer transport: topic names, message envelope, correlation id, capability announcement, heartbeat and timeouts over MQTT and the HA event bus.
 
 ### Phase 4: community
 
@@ -488,3 +520,27 @@ The repo should be renamed to kerb (or the chosen alternative). hacs.json is rew
 ## 13. Prior art and credits
 
 noiwid/HAFamilyLink and noiwid/HAFamilySafety (MIT) for the vendor adapters this project binds to. pantherale0/pyfamilysafety, pynintendoparental and the HA core nintendo_parental_controls integration for the entity template. Matter Content Control cluster 0x050F for field names. IETF draft-oprea-x-ppc-00 for the shared-quota idea and draft-campling-parcep-sync-00 for the policy vocabulary. MusicBrainz and Open Food Facts for the voting and governance model. TimeLimit and Timekpr-nExT for the policy shapes. TaskMate, ChoreOps and MedienStop for showing the demand for a grant hook.
+
+## Appendix A. Vocabularies
+
+The schemas are normative. This list is a reading aid and is regenerated from them.
+
+| Where | Values |
+|---|---|
+| age_band | under_7, 7_to_12, 13_to_15, 16_plus |
+| platform | android, windows, xbox, playstation, switch, ios, tv, pc, other |
+| override.kind | lock, grant, unlock, allowance_today |
+| scope.type | all, device, app, tag |
+| override.status | requested, applied, partial, confirmed, failed, expired, cancelled |
+| result.status | requested, applied, confirmed, failed, unknown |
+| result.mode | pause, zero_allowance, network, power, manual, bonus, allowance |
+| effect | allow_always, allow, count_half, count_double, require_approval, block |
+| ledger.kind | allowance, grant, penalty, usage, lock |
+| ledger.rate | 0.0, 0.5, 1.0, 2.0 |
+| app key namespace | android, msstore, xbox, psn, nintendo, steam, igdb, apple, other |
+| rating organisation | PEGI, ESRB, USK, IARC, ACB, CERO, other |
+| health.status | healthy, degraded, unknown, revoked |
+| request.kind | more_time, app_access |
+| request.status | pending, approved, denied, expired |
+| tag polarity | value, neutral, caution |
+| source prefix | guardian:, automation:, integration: |
