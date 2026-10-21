@@ -5,39 +5,50 @@
     "at": "2026-10-21T20:05:00Z"
   },
   "lists": "css",
-  "title": "Handrail: keep the floor, add a path",
+  "title": "Handrail: parents in control, one app for every screen",
   "order": [
     "cover",
-    "australia",
-    "adults",
-    "cliff",
+    "vision",
     "today",
-    "floorpath",
-    "household",
-    "path",
-    "home",
-    "loop",
-    "platforms",
-    "roadmap",
+    "solution",
+    "ban-leaks",
+    "ban-protections",
+    "evidence",
+    "sweden-now",
+    "sweden-remiss",
+    "floor-path",
+    "household-plan",
+    "read-back",
+    "stays-home",
+    "guide",
+    "sweden-lead",
     "asks",
-    "close"
+    "cost-close"
   ],
   "sections": {
-    "open": {
-      "description": "Handrail in one line: keep the minimum age, add a certified path beside it.",
+    "vision": {
+      "description": "Parents in control: one plan, set once, that every device and app follows.",
       "start": "cover"
     },
-    "cost": {
-      "description": "What a ban costs on the early evidence: it leaks, it checks every adult, it teaches nothing.",
-      "start": "australia"
-    },
-    "proposal": {
-      "description": "Where parents are today, then the floor and the path, one household, the home boundary, honest read-back and why platforms gain.",
+    "today": {
+      "description": "Where parents are today, and the same picture joined up by Handrail.",
       "start": "today"
     },
+    "ban": {
+      "description": "What a ban does: it leaks, parents make the holes, and a borrowed account loses every teen protection.",
+      "start": "ban-leaks"
+    },
+    "sweden": {
+      "description": "Where Sweden stands and what its consultation asked for.",
+      "start": "sweden-now"
+    },
+    "proposal": {
+      "description": "The floor and the path, the household plan, honest read-back, what stays home, and an optional guide.",
+      "start": "floor-path"
+    },
     "asks": {
-      "description": "The calendar, three asks and the price.",
-      "start": "roadmap"
+      "description": "Why Sweden can lead, four asks and the price.",
+      "start": "sweden-lead"
     }
   },
   "faces": {

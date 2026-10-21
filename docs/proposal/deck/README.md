@@ -1,6 +1,6 @@
 # Handrail pitch deck
 
-Thirteen slides that front the proposal in `../PROPOSAL.md`. Each slide is one HTML section in the
+Seventeen slides that front the proposal in `../PROPOSAL.md`. Each slide is one HTML section in the
 Claude Slides format under `project/slides/`, with speaker notes in its `<aside>`. `project/deck.json`
 holds the order, sections and typefaces (Fraunces and Source Sans 3 from Google Fonts).
 
