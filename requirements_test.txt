@@ -1,0 +1,6 @@
+# Test requirements for Kerb.
+# pytest-homeassistant-custom-component pins a matching Home Assistant release
+# (0.13.316 -> homeassistant 2026.2.3, the newest that runs on Python 3.13).
+pytest-homeassistant-custom-component==0.13.316
+jsonschema>=4.23
+ruff>=0.9

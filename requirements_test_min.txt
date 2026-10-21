@@ -1,0 +1,7 @@
+# Oldest supported Home Assistant (hacs.json "homeassistant").
+# pytest-homeassistant-custom-component 0.13.285 pins homeassistant 2025.10.0.
+pytest-homeassistant-custom-component==0.13.285
+# aiodns 3.5.0 (pinned by that release) breaks with pycares 5.
+pycares<5
+jsonschema>=4.23
+ruff>=0.9
