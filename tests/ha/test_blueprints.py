@@ -12,6 +12,6 @@ BLUEPRINTS = sorted((Path(__file__).resolve().parents[2] / "blueprints" / "autom
 @pytest.mark.parametrize("path", BLUEPRINTS, ids=lambda path: path.stem)
 def test_blueprint_is_valid(path: Path) -> None:
 	data = loader.load_yaml(str(path))
-	BLUEPRINT_SCHEMA(data["blueprint"])
+	BLUEPRINT_SCHEMA(data)
 	assert data["blueprint"]["domain"] == "automation"
 	assert "kerb." in str(data["actions"])
