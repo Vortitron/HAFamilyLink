@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kerb.dev/schema/0.1/event.json",
+  "title": "Event",
+  "description": "Emitted by a controller. Unknown is never reported as unlocked.",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "override.applied",
+        "override.confirmed",
+        "override.partial",
+        "override.failed",
+        "override.expired",
+        "override.cancelled",
+        "enforcement.unconfirmed",
+        "allowance.low",
+        "allowance.exhausted",
+        "request.received",
+        "request.decided",
+        "enforcer.degraded",
+        "enforcer.restored",
+        "usage.reported"
+      ]
+    },
+    "household_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "child_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "payload": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "type",
+    "household_id",
+    "at"
+  ],
+  "patternProperties": {
+    "^x_": {}
+  },
+  "additionalProperties": true
+}

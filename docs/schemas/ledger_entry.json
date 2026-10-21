@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kerb.dev/schema/0.1/ledger_entry.json",
+  "title": "Ledger entry",
+  "description": "Append-only line in a child's daily account.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "child_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "allowance",
+        "grant",
+        "penalty",
+        "usage",
+        "lock"
+      ]
+    },
+    "minutes": {
+      "type": "number",
+      "minimum": 0
+    },
+    "rate": {
+      "type": "number",
+      "enum": [
+        0.5,
+        1.0,
+        2.0
+      ],
+      "default": 1.0
+    },
+    "device_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "app": {
+      "type": "string",
+      "pattern": "^(android|msstore|xbox|psn|nintendo|steam|igdb|apple|other):[^\\s]+$",
+      "description": "Namespaced app key, see SPEC.md section 3.9."
+    },
+    "rule": {
+      "type": "string",
+      "description": "Which policy rule produced the rate."
+    },
+    "per_app_usage_available": {
+      "type": "boolean"
+    },
+    "override_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "source": {
+      "type": "string",
+      "pattern": "^(guardian|automation|integration):.+$"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "recorded_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "id",
+    "child_id",
+    "date",
+    "kind",
+    "minutes",
+    "recorded_at"
+  ],
+  "patternProperties": {
+    "^x_": {}
+  },
+  "additionalProperties": true
+}

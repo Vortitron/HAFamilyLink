@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kerb.dev/schema/0.1/household.json",
+  "title": "Household",
+  "description": "One per installation. Carries no credentials.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "time_zone": {
+      "type": "string",
+      "description": "IANA zone name."
+    },
+    "guardians": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Host user ids allowed to lock, unlock and grant."
+    },
+    "pin_hash": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Hash of the optional parent PIN. Never the PIN."
+    },
+    "usage_retention_days": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 31
+    },
+    "community_sharing": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "id",
+    "time_zone",
+    "guardians"
+  ],
+  "patternProperties": {
+    "^x_": {}
+  },
+  "additionalProperties": true
+}

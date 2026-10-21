@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kerb.dev/schema/0.1/capabilities.json",
+  "title": "Enforcer capabilities",
+  "description": "What an enforcer declares about itself. Flags are honest, never aspirational.",
+  "type": "object",
+  "properties": {
+    "enforcer": {
+      "type": "string"
+    },
+    "level": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4
+    },
+    "lock_now": {
+      "type": "boolean"
+    },
+    "lock_emulated": {
+      "type": "boolean"
+    },
+    "unlock_now": {
+      "type": "boolean"
+    },
+    "grant_minutes": {
+      "type": "boolean"
+    },
+    "daily_allowance": {
+      "type": "boolean"
+    },
+    "allowed_windows": {
+      "type": "boolean"
+    },
+    "app_block": {
+      "type": "boolean"
+    },
+    "app_limit": {
+      "type": "boolean"
+    },
+    "usage_read": {
+      "type": "boolean"
+    },
+    "usage_per_app": {
+      "type": "boolean"
+    },
+    "request_queue": {
+      "type": "boolean"
+    },
+    "network_block": {
+      "type": "boolean"
+    },
+    "power_off": {
+      "type": "boolean"
+    },
+    "lossy_per_device": {
+      "type": "boolean"
+    },
+    "poll_interval_s": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "confirmation_window_s": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "notes": {
+      "type": "string",
+      "description": "Human text on emulations and known gaps."
+    }
+  },
+  "required": [
+    "enforcer",
+    "level",
+    "poll_interval_s",
+    "confirmation_window_s"
+  ],
+  "patternProperties": {
+    "^x_": {}
+  },
+  "additionalProperties": true
+}

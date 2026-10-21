@@ -1,0 +1,20 @@
+{
+  "id": "8d0c0b8a-0f8e-4e4f-9d8f-6f8f6b3b2a11",
+  "child_id": "c1d6b7b0-3b5f-4c7c-a2f6-0b3b5b1a1a22",
+  "kind": "lock",
+  "scope": {"type": "all"},
+  "reason": "dinner",
+  "source": "guardian:andy",
+  "starts_at": "2026-10-21T17:00:00+01:00",
+  "expires_at": "2026-10-21T18:00:00+01:00",
+  "status": "partial",
+  "results": [
+    {"enforcer": "unifi", "device_id": "5a2b7c1e-1111-4d2e-9f00-000000000001", "status": "confirmed", "mode": "network",
+     "detail": "client blocked at controller", "confirmed_at": "2026-10-21T17:00:04+01:00"},
+    {"enforcer": "family_safety", "device_id": "5a2b7c1e-1111-4d2e-9f00-000000000002", "status": "confirmed", "mode": "zero_allowance",
+     "detail": "schedule saved, all seven days set to 0", "confirmed_at": "2026-10-21T17:00:41+01:00",
+     "restore": {"allowance_minutes": [120, 120, 120, 120, 120, 180, 180]}},
+    {"enforcer": "manual", "device_id": "5a2b7c1e-1111-4d2e-9f00-000000000003", "status": "requested", "mode": "manual",
+     "detail": "Open PlayStation Family and set play time for today to 0, then press Done"}
+  ]
+}

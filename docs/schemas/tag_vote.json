@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kerb.dev/schema/0.1/tag_vote.json",
+  "title": "Tag vote",
+  "description": "One household's assertion about one app and one tag. Never names a child.",
+  "type": "object",
+  "properties": {
+    "app": {
+      "type": "string",
+      "pattern": "^(android|msstore|xbox|psn|nintendo|steam|igdb|apple|other):[^\\s]+$",
+      "description": "Namespaced app key, see SPEC.md section 3.9."
+    },
+    "tag": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{1,40}$"
+    },
+    "vote": {
+      "type": "integer",
+      "enum": [
+        -1,
+        1
+      ]
+    },
+    "household_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Pseudonymous, generated locally."
+    },
+    "client": {
+      "type": "string"
+    },
+    "client_version": {
+      "type": "string"
+    },
+    "evidence": {
+      "type": "string",
+      "format": "uri"
+    },
+    "note": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "platform_hint": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "app",
+    "tag",
+    "vote",
+    "household_id",
+    "client",
+    "client_version",
+    "created_at"
+  ],
+  "patternProperties": {
+    "^x_": {}
+  },
+  "additionalProperties": true
+}

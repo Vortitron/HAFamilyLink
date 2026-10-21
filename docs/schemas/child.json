@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kerb.dev/schema/0.1/child.json",
+  "title": "Child",
+  "description": "A pseudonymous child. No date of birth is stored.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "display_name": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "age_band": {
+      "type": "string",
+      "enum": [
+        "under_7",
+        "7_to_12",
+        "13_to_15",
+        "16_plus"
+      ]
+    },
+    "policy_id": {
+      "type": "string",
+      "format": "uuid"
+    }
+  },
+  "required": [
+    "id",
+    "display_name",
+    "age_band"
+  ],
+  "patternProperties": {
+    "^x_": {}
+  },
+  "additionalProperties": true
+}
