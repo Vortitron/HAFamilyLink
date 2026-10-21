@@ -52,7 +52,7 @@
           "additionalProperties": false
         }
       },
-      "description": "Seven values, index 0 is Monday (ISO weekday 1)."
+      "description": "Seven values, index 0 is Monday (ISO weekday 1). A window may cross midnight (start later than end). start equal to end is not allowed."
     },
     "bedtime": {
       "type": "array",
@@ -121,15 +121,11 @@
               "require_approval",
               "block"
             ]
-          },
-          "daily_limit_minutes": {
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 1440
           }
         },
         "additionalProperties": false
-      }
+      },
+      "description": "App key plus effect. A per-app rule beats any tag rule. Per-app daily limits are phase 3 and not in 0.1."
     },
     "tag_rules": {
       "type": "array",
@@ -154,33 +150,11 @@
               "require_approval",
               "block"
             ]
-          },
-          "windows": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": [
-                "start",
-                "end"
-              ],
-              "properties": {
-                "start": {
-                  "type": "string",
-                  "pattern": "^([01][0-9]|2[0-3]):(00|30)$",
-                  "description": "Local time, 30 minute granularity."
-                },
-                "end": {
-                  "type": "string",
-                  "pattern": "^([01][0-9]|2[0-3]):(00|30)$",
-                  "description": "Local time, 30 minute granularity."
-                }
-              },
-              "additionalProperties": false
-            }
           }
         },
         "additionalProperties": false
-      }
+      },
+      "description": "Tag id plus effect. Among several matching tags the strictest wins. Time-of-day tag windows are phase 3 and not in 0.1."
     },
     "grant_cap_minutes_per_day": {
       "oneOf": [

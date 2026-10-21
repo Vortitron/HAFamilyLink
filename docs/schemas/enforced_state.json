@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kerb.dev/schema/0.1/enforced_state.json",
+  "title": "Enforced state",
+  "description": "What an enforcer read back for one device. Null means unknown and is a value, never an omission.",
+  "type": "object",
+  "properties": {
+    "device_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "locked": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "True when the enforcer can see the device is stopped, false when it can see it is not, null when it does not know. Never guess."
+    },
+    "in_use": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "True only when the enforcer knows the device is being used now. The controller charges minutes on it for devices with no usage API."
+    },
+    "detail": {
+      "type": "string",
+      "description": "Human text shown in summaries, such as 'client blocked' or 'waiting for a parent to lock'."
+    },
+    "observed_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}[Tt]\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?([Zz]|[+-]\\d{2}:\\d{2})$",
+      "description": "RFC 3339 with an explicit offset (Z or +hh:mm)."
+    }
+  },
+  "required": [
+    "device_id",
+    "locked"
+  ],
+  "patternProperties": {
+    "^x_": {}
+  },
+  "additionalProperties": true
+}

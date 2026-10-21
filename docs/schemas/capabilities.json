@@ -6,12 +6,14 @@
   "type": "object",
   "properties": {
     "enforcer": {
-      "type": "string"
+      "type": "string",
+      "description": "The enforcer's own name, unique within a household."
     },
     "level": {
       "type": "integer",
       "minimum": 0,
-      "maximum": 4
+      "maximum": 4,
+      "description": "Conformance level claimed, 0 to 4 (SPEC.md 4.4)."
     },
     "lock_now": {
       "type": "boolean"
@@ -62,11 +64,13 @@
     },
     "poll_interval_s": {
       "type": "integer",
-      "minimum": 1
+      "minimum": 1,
+      "description": "How often the controller may poll this enforcer."
     },
     "confirmation_window_s": {
       "type": "integer",
-      "minimum": 1
+      "minimum": 1,
+      "description": "How long after a write the controller waits for the read-back before calling it failed."
     },
     "notes": {
       "type": "string",

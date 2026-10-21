@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kerb.dev/schema/0.1/health.json",
+  "title": "Enforcer health",
+  "description": "Whether the controller may believe this enforcer's read-backs. Only healthy and degraded are trusted.",
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "healthy",
+        "degraded",
+        "unknown",
+        "revoked"
+      ]
+    },
+    "reason": {
+      "type": "string",
+      "description": "Human text, such as 'session lost' or 'switch.ps5 does not exist'."
+    }
+  },
+  "required": [
+    "status"
+  ],
+  "patternProperties": {
+    "^x_": {}
+  },
+  "additionalProperties": true
+}

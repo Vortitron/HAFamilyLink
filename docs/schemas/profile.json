@@ -11,18 +11,21 @@
     },
     "name": {
       "type": "string",
-      "maxLength": 80
+      "maxLength": 80,
+      "description": "A name for the profile, not for a person or a child."
     },
     "description": {
-      "type": "string"
+      "type": "string",
+      "description": "What the profile is for. Must not contain names or anything about a child."
     },
     "version": {
       "type": "integer",
       "minimum": 1
     },
-    "author_household_id": {
+    "author_contributor_id": {
       "type": "string",
-      "format": "uuid"
+      "format": "uuid",
+      "description": "The author's contributor id, the same rotating id used on votes. Never Household.id."
     },
     "age_band": {
       "type": "string",
@@ -123,5 +126,5 @@
   "patternProperties": {
     "^x_": {}
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

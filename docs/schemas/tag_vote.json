@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://kerb.dev/schema/0.1/tag_vote.json",
   "title": "Tag vote",
-  "description": "One household's assertion about one app and one tag. Never names a child.",
+  "description": "One household's assertion about one app and one tag. Carries a rotating contributor id, never a child, a name or any usage.",
   "type": "object",
   "properties": {
     "app": {
@@ -21,10 +21,10 @@
         1
       ]
     },
-    "household_id": {
+    "contributor_id": {
       "type": "string",
       "format": "uuid",
-      "description": "Pseudonymous, generated locally."
+      "description": "A random id the client mints for the community layer. Separate from Household.id and never derived from it. The parent may rotate it at any time (SPEC.md 7.2)."
     },
     "client": {
       "type": "string"
@@ -34,25 +34,30 @@
     },
     "evidence": {
       "type": "string",
-      "format": "uri"
+      "format": "uri",
+      "pattern": "^https://(play\\.google\\.com|apps\\.microsoft\\.com|www\\.xbox\\.com|store\\.playstation\\.com|www\\.nintendo\\.com|store\\.steampowered\\.com|apps\\.apple\\.com|www\\.igdb\\.com)/",
+      "description": "A store or IGDB page for the app. Nothing else: the server does not accept uploads or links to images in 0.1."
     },
     "note": {
       "type": "string",
-      "maxLength": 500
+      "maxLength": 500,
+      "description": "Why the tag fits. Must not contain names or anything about a child. The server may strip or reject it."
     },
     "platform_hint": {
       "type": "string"
     },
     "created_at": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}[Tt]\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?([Zz]|[+-]\\d{2}:\\d{2})$",
+      "description": "RFC 3339 with an explicit offset (Z or +hh:mm)."
     }
   },
   "required": [
     "app",
     "tag",
     "vote",
-    "household_id",
+    "contributor_id",
     "client",
     "client_version",
     "created_at"
@@ -60,5 +65,5 @@
   "patternProperties": {
     "^x_": {}
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

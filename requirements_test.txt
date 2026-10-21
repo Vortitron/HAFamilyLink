@@ -3,4 +3,6 @@
 # (0.13.316 -> homeassistant 2026.2.3, the newest that runs on Python 3.13).
 pytest-homeassistant-custom-component==0.13.316
 jsonschema>=4.23
+# Lets jsonschema check format date-time; the schemas also carry an offset pattern.
+rfc3339-validator>=0.1.4
 ruff>=0.9

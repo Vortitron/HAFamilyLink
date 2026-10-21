@@ -4,4 +4,6 @@ pytest-homeassistant-custom-component==0.13.285
 # aiodns 3.5.0 (pinned by that release) breaks with pycares 5.
 pycares<5
 jsonschema>=4.23
+# Lets jsonschema check format date-time; the schemas also carry an offset pattern.
+rfc3339-validator>=0.1.4
 ruff>=0.9
