@@ -51,6 +51,7 @@ SOURCE_BEDTIME = "policy:bedtime"
 SOURCE_WINDOW = "policy:window"
 AUTO_SOURCES = (SOURCE_EXHAUSTED, SOURCE_BEDTIME, SOURCE_WINDOW)
 
+# Summary verbs: what an enforcer did, chosen from the override kind and the result mode.
 MODE_VERB: dict[Mode, str] = {
 	Mode.PAUSE: "locked",
 	Mode.ZERO_ALLOWANCE: "allowance zeroed",
@@ -60,11 +61,25 @@ MODE_VERB: dict[Mode, str] = {
 	Mode.BONUS: "bonus added",
 	Mode.ALLOWANCE: "allowance set",
 }
+RELEASE_VERB: dict[Mode, str] = {
+	Mode.PAUSE: "unlocked",
+	Mode.ZERO_ALLOWANCE: "allowance restored",
+	Mode.NETWORK: "network unblocked",
+	Mode.POWER: "power restored",
+	Mode.MANUAL: "manual release requested",
+	Mode.BONUS: "bonus added",
+	Mode.ALLOWANCE: "allowance set",
+}
 MODE_CAVEAT: dict[Mode, str] = {
 	Mode.NETWORK: "may still run offline games",
 	Mode.ZERO_ALLOWANCE: "schedule will be restored on unlock",
 	Mode.MANUAL: "waiting for a parent to press done",
 }
+RELEASE_CAVEAT: dict[Mode, str] = {
+	Mode.MANUAL: "waiting for a parent to press done",
+}
+# Result statuses that mean an enforcer is holding, or trying to hold, a device.
+LIVE_RESULTS = (ResultStatus.REQUESTED, ResultStatus.APPLIED, ResultStatus.CONFIRMED)
 RESULT_SUFFIX: dict[ResultStatus, str] = {
 	ResultStatus.REQUESTED: "Awaiting confirmation.",
 	ResultStatus.APPLIED: "Awaiting confirmation.",
@@ -240,13 +255,14 @@ class Controller:
 			if scope.type == "all" or lock.scope.type == "all" or lock.scope == scope
 		]
 		self.overrides.append(override)
+		released: set[tuple[str, str]] = set()
+		pairs = []
 		for lock in locks:
-			await self._revert_lock(lock, record_on=override)
-		if not locks:
-			override.results.append(
-				EnforcerResult(LEDGER_ENFORCER, ResultStatus.CONFIRMED, detail="nothing was locked", confirmed_at=now)
-			)
-		self._settle(override)
+			pairs.extend(await self._release(lock, released, within=scope))
+			# A lock the unlock fully covers is over. A wider lock keeps its other devices.
+			if scope.type == "all" or lock.scope == scope:
+				self._supersede(lock, override)
+		await self._record_release(override, pairs, "nothing was locked" if not locks else "nothing to release")
 		return override
 
 	async def grant(self, child_id: str, minutes: int, reason: str = "", source: str = "guardian") -> Override:
@@ -306,7 +322,9 @@ class Controller:
 		)
 		self.overrides.append(record)
 		if original.kind == OverrideKind.LOCK and original.active_at(now):
-			await self._revert_lock(original, record_on=record)
+			original.status = OverrideStatus.CANCELLED
+			pairs = await self._release(original, set())
+			await self._record_release(record, pairs, "still held by another lock")
 		elif original.kind == OverrideKind.GRANT and original.minutes:
 			self.ledger(original.child_id).add_penalty(original.minutes, now, source, record.reason, record.id)
 			record.results.append(EnforcerResult(LEDGER_ENFORCER, ResultStatus.CONFIRMED, mode=Mode.BONUS, confirmed_at=now))
@@ -377,14 +395,33 @@ class Controller:
 			)
 		self._settle(override)
 
-	async def _revert_lock(self, lock: Override, record_on: Override) -> None:
-		"""Ask every enforcer that applied a lock to release it.
+	def _still_held(self, lock: Override, enforcer_name: str, device_id: str) -> bool:
+		"""Whether another lock in force still holds this enforcer and device pair.
 
-		When the release belongs to another decision (an unlock or a cancel)
-		the results land on that record and are confirmed by read-back. When a
-		lock expires the release results are kept under ``restore["revert"]``
-		on the lock itself, and a device still locked afterwards raises
-		``enforcement.unconfirmed``.
+		Releasing the pair would free a device the parent still wants locked,
+		so the caller skips it. A lock that never asked this enforcer does not
+		count: its own expiry would then leave the pair locked for good.
+		"""
+		others = [override for override in self.child_overrides(lock.child_id) if override.id != lock.id]
+		for holder in ov.locks_in_force(others, self.now(), device_id):
+			if any(
+				result.enforcer == enforcer_name and result.device_id == device_id and result.status in LIVE_RESULTS
+				for result in holder.results
+			):
+				return True
+		return False
+
+	async def _release(
+		self,
+		lock: Override,
+		released: set[tuple[str, str]],
+		within: Scope | None = None,
+	) -> list[tuple[Enforcer, Device, EnforcerResult]]:
+		"""Ask the enforcers that applied ``lock`` to let go.
+
+		Each enforcer and device pair is released once per pass (``released``
+		is shared across the locks an unlock lifts), only inside ``within``
+		when a scope is given, and never while another lock still holds it.
 		"""
 		await self._ensure_health()
 		pairs = []
@@ -393,13 +430,42 @@ class Controller:
 			device = self.devices.get(result.device_id or "")
 			if enforcer is None or device is None:
 				continue
+			if within is not None and not within.covers_device(device.id):
+				continue
+			key = (enforcer.name, device.id)
+			if key in released or self._still_held(lock, enforcer.name, device.id):
+				continue
+			released.add(key)
 			pairs.append((enforcer, device, await self._call(enforcer.revert, enforcer, lock, device, result.mode)))
-		if record_on is not lock:
-			record_on.results.extend(result for _enforcer, _device, result in pairs)
-			self.emit("override.applied", record_on.child_id, override=record_on.to_dict())
-			await self._confirm(record_on)
+		return pairs
+
+	async def _record_release(self, record: Override, pairs: list[tuple[Enforcer, Device, EnforcerResult]], nothing: str) -> None:
+		"""Land release results on the unlock or cancel record, announce once, then confirm by read-back."""
+		if not pairs:
+			record.results.append(
+				EnforcerResult(LEDGER_ENFORCER, ResultStatus.CONFIRMED, detail=nothing, confirmed_at=self.now())
+			)
+			self._settle(record)
 			return
-		lock.restore["revert"] = [result.to_dict() for _enforcer, _device, result in pairs]
+		record.results.extend(result for _enforcer, _device, result in pairs)
+		self.emit("override.applied", record.child_id, override=record.to_dict())
+		await self._confirm(record)
+
+	def _supersede(self, lock: Override, by: Override) -> None:
+		"""An unlock ends a lock. Mark it cancelled so reconcile and expiry leave it alone."""
+		if lock.status in (OverrideStatus.CANCELLED, OverrideStatus.EXPIRED):
+			return
+		lock.status = OverrideStatus.CANCELLED
+		self.emit("override.cancelled", lock.child_id, override=lock.to_dict(), by=by.id)
+
+	async def _revert_expired(self, lock: Override) -> None:
+		"""A lock ran out. Release what it held, unless a later lock still wants it held.
+
+		The release results are kept under ``restore["revert"]`` on the lock
+		itself, and a device still locked afterwards raises
+		``enforcement.unconfirmed``.
+		"""
+		pairs = await self._release(lock, set())
 		for enforcer, device, result in pairs:
 			state = await self._read(enforcer, device)
 			if state.locked is False:
@@ -531,9 +597,9 @@ class Controller:
 		await self._poll_health()
 		for override in list(self.overrides):
 			if override.status not in ov.SETTLED and override.expires_at <= now:
-				if override.kind == OverrideKind.LOCK and override.results:
-					await self._revert_lock(override, record_on=override)
 				override.status = OverrideStatus.EXPIRED
+				if override.kind == OverrideKind.LOCK and override.results:
+					await self._revert_expired(override)
 				self.emit("override.expired", override.child_id, override=override.to_dict())
 			elif override.status == OverrideStatus.APPLIED:
 				await self._confirm(override)
@@ -626,17 +692,23 @@ class Controller:
 			enforcement = EnforcementStatus.UNKNOWN
 		else:
 			if lock is not None:
-				status = (
-					ChildStatus.BEDTIME if lock.source == SOURCE_BEDTIME or pol.in_bedtime(policy, now) else ChildStatus.LOCKED
-				)
+				if lock.source == SOURCE_EXHAUSTED:
+					status = ChildStatus.EXHAUSTED
+				elif lock.source == SOURCE_BEDTIME or pol.in_bedtime(policy, now):
+					status = ChildStatus.BEDTIME
+				else:
+					status = ChildStatus.LOCKED
 			elif ledger.remaining <= 0:
 				status = ChildStatus.EXHAUSTED
 			else:
 				status = ChildStatus.FREE
 			if lock is not None:
+				# Writes sent and the window still open is pending, not a problem. Failed is.
 				enforcement = {
 					OverrideStatus.CONFIRMED: EnforcementStatus.CONFIRMED,
 					OverrideStatus.PARTIAL: EnforcementStatus.PARTIAL,
+					OverrideStatus.REQUESTED: EnforcementStatus.PENDING,
+					OverrideStatus.APPLIED: EnforcementStatus.PENDING,
 				}.get(lock.status, EnforcementStatus.DEGRADED)
 			elif degraded:
 				enforcement = EnforcementStatus.DEGRADED
@@ -671,7 +743,15 @@ class Controller:
 		)
 
 	def summary(self, override: Override) -> list[str]:
-		"""One verbatim line per enforcer result, for the dashboard."""
+		"""One verbatim line per enforcer result, for the dashboard.
+
+		The verb follows what was asked (a lock blocks, an unlock unblocks) and
+		is dropped when the enforcer failed or its state is unknown, because
+		then nothing can be said about what happened to the device.
+		"""
+		releasing = override.kind == OverrideKind.UNLOCK
+		verbs = RELEASE_VERB if releasing else MODE_VERB
+		caveats = RELEASE_CAVEAT if releasing else MODE_CAVEAT
 		lines = []
 		for result in override.results:
 			device = self.devices.get(result.device_id or "")
@@ -679,9 +759,16 @@ class Controller:
 			if result.enforcer == LEDGER_ENFORCER:
 				lines.append(f"{result.detail or 'ledger updated'}.".capitalize())
 				continue
-			verb = MODE_VERB.get(result.mode, str(result.mode or "updated")) if result.mode else "updated"
+			if result.status in (ResultStatus.FAILED, ResultStatus.UNKNOWN):
+				outcome = "failed" if result.status == ResultStatus.FAILED else "state unknown"
+				line = f"{name} ({result.enforcer}): {outcome}"
+				if result.detail:
+					line += f", {result.detail}"
+				lines.append(f"{line}.")
+				continue
+			verb = verbs.get(result.mode, str(result.mode or "updated")) if result.mode else "updated"
 			line = f"{name} {verb} ({result.enforcer})."
-			caveat = MODE_CAVEAT.get(result.mode) if result.mode else None
+			caveat = caveats.get(result.mode) if result.mode else None
 			if caveat:
 				line += f" {name} {caveat}."
 			suffix = RESULT_SUFFIX.get(result.status, "")

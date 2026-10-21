@@ -122,6 +122,7 @@
         "name": "Enforcement",
         "state": {
           "confirmed": "Confirmed",
+          "pending": "Pending",
           "partial": "Partial",
           "degraded": "Degraded",
           "unknown": "Unknown"

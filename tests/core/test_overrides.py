@@ -55,6 +55,25 @@ def test_device_scope_only_covers_that_device() -> None:
 	assert ov.effective_lock([lock], now) is lock
 
 
+def test_device_unlock_leaves_a_child_lock_on_other_devices() -> None:
+	lock = make(OverrideKind.LOCK, 0)
+	unlock = make(OverrideKind.UNLOCK, 5, Scope("device", device_id="ps5"))
+	now = START + timedelta(minutes=6)
+	assert ov.effective_lock([lock, unlock], now, "ps5") is None
+	assert ov.effective_lock([lock, unlock], now, "xbox") is lock
+	assert ov.effective_lock([lock, unlock], now) is lock
+	assert ov.locks_in_force([lock, unlock], now, "xbox") == [lock]
+
+
+def test_cancel_records_do_not_lift_other_locks() -> None:
+	first = make(OverrideKind.LOCK, 0)
+	second = make(OverrideKind.LOCK, 5)
+	first.status = OverrideStatus.CANCELLED
+	record = make(OverrideKind.UNLOCK, 10)
+	record.cancels = first.id
+	assert ov.effective_lock([first, second, record], START + timedelta(minutes=11)) is second
+
+
 def test_app_scope_never_locks_a_device() -> None:
 	lock = make(OverrideKind.LOCK, 0, Scope("app", app="steam:252950"))
 	assert ov.effective_lock([lock], START + timedelta(minutes=1), "pc") is None

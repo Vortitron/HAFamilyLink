@@ -17,23 +17,50 @@ def active(overrides: Iterable[Override], now: datetime, kind: OverrideKind | No
 	return sorted(found, key=lambda override: override.starts_at)
 
 
+def _decisions(overrides: Iterable[Override], now: datetime, device_id: str | None) -> list[Override]:
+	"""Locks and unlocks in force that bear on a device, oldest first.
+
+	Compensating records (``cancels`` set) are not decisions in their own
+	right: the override they cancel is already marked cancelled, and they
+	must not lift any other lock.
+	"""
+	return [
+		override
+		for override in active(overrides, now)
+		if override.kind in (OverrideKind.LOCK, OverrideKind.UNLOCK)
+		and override.cancels is None
+		and override.scope.type in ("all", "device")
+		and (device_id is None or override.scope.covers_device(device_id))
+	]
+
+
+def locks_in_force(overrides: Iterable[Override], now: datetime, device_id: str | None = None) -> list[Override]:
+	"""Every lock still holding a device, or any device when ``device_id`` is None, oldest first.
+
+	An unlock lifts the locks issued before it that it covers. For one device
+	every decision that bears on it covers it. For the whole child a device
+	unlock only lifts locks scoped to that device: a lock on every device stays
+	in force for the others.
+	"""
+	held: list[Override] = []
+	for decision in _decisions(overrides, now, device_id):
+		if decision.kind == OverrideKind.LOCK:
+			held.append(decision)
+		elif device_id is not None or decision.scope.type == "all":
+			held = []
+		else:
+			held = [lock for lock in held if lock.scope != decision.scope]
+	return held
+
+
 def effective_lock(overrides: Iterable[Override], now: datetime, device_id: str | None = None) -> Override | None:
 	"""The lock in force for a device (or the whole child), or None.
 
 	The newest decision wins. A lock issued after an unlock locks again; an
 	unlock issued after a lock lifts it. Grants never lift a lock.
 	"""
-	decisions = [
-		override
-		for override in active(overrides, now)
-		if override.kind in (OverrideKind.LOCK, OverrideKind.UNLOCK)
-		and (device_id is None or override.scope.covers_device(device_id))
-		and override.scope.type in ("all", "device")
-	]
-	if not decisions:
-		return None
-	newest = decisions[-1]
-	return newest if newest.kind == OverrideKind.LOCK else None
+	held = locks_in_force(overrides, now, device_id)
+	return held[-1] if held else None
 
 
 def allowance_today(overrides: Iterable[Override], now: datetime) -> Override | None:

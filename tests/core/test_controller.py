@@ -39,7 +39,7 @@ async def test_lock_uses_network_and_manual_but_not_power_without_opt_in(control
 	assert types(events)[:1] == ["override.applied"]
 	state = controller.child_state(alice.id)
 	assert state.status == ChildStatus.LOCKED
-	assert state.enforcement == EnforcementStatus.DEGRADED
+	assert state.enforcement == EnforcementStatus.PENDING  # awaiting the parent, not a problem
 	assert state.summary == [
 		"PS5 network blocked (unifi). PS5 may still run offline games.",
 		"PS5 manual action requested (manual). PS5 waiting for a parent to press done. Awaiting confirmation.",
@@ -106,7 +106,7 @@ async def test_flaky_enforcer_becomes_a_failed_result_not_a_crash(controller: Co
 	override = await controller.lock(alice.id, minutes=10)
 	assert override.status == OverrideStatus.FAILED
 	assert override.results[0].detail == "vendor said no"
-	assert controller.summary(override) == ["Xbox network blocked (unifi). Xbox may still run offline games. Failed."]
+	assert controller.summary(override) == ["Xbox (unifi): failed, vendor said no."]
 
 
 async def test_unknown_enforcer_means_unknown_never_free(controller: Controller, alice, events) -> None:
@@ -169,7 +169,7 @@ async def test_usage_is_charged_and_exhaustion_locks_then_grant_releases(
 	await controller.tick()
 	state = controller.child_state(alice.id)
 	assert state.remaining == 0
-	assert state.status == ChildStatus.LOCKED
+	assert state.status == ChildStatus.EXHAUSTED
 	assert "allowance.exhausted" in types(events)
 	auto = [override for override in controller.overrides if override.source == SOURCE_EXHAUSTED]
 	assert len(auto) == 1 and auto[0].status == OverrideStatus.CONFIRMED
@@ -381,3 +381,117 @@ async def test_listener_errors_do_not_break_enforcement(controller: Controller, 
 	add_device(controller, "PS5", alice.id, FakeEnforcer("unifi", Mode.NETWORK))
 	override = await controller.lock(alice.id, minutes=5)
 	assert override.status == OverrideStatus.CONFIRMED
+
+
+async def test_unlock_summary_says_what_was_released(controller: Controller, alice) -> None:
+	unifi = FakeEnforcer("unifi", Mode.NETWORK)
+	plug = FakeEnforcer("plug", Mode.POWER)
+	add_device(controller, "PS5", alice.id, unifi, plug, power_opt_in=True)
+	await controller.lock(alice.id)
+	unlock = await controller.unlock(alice.id)
+	assert controller.summary(unlock) == ["PS5 network unblocked (unifi).", "PS5 power restored (plug)."]
+
+
+async def test_pending_then_failed_enforcement(controller: Controller, alice, clock: Clock) -> None:
+	liar = FakeEnforcer("family_safety", Mode.ZERO_ALLOWANCE, noop=True, confirmation_window_s=120)
+	add_device(controller, "Xbox", alice.id, liar)
+	await controller.lock(alice.id, minutes=60)
+	assert controller.child_state(alice.id).enforcement == EnforcementStatus.PENDING
+	clock.advance(minutes=3)
+	await controller.tick()
+	assert controller.child_state(alice.id).enforcement == EnforcementStatus.DEGRADED
+
+
+async def test_expiry_of_an_earlier_lock_keeps_a_later_lock_in_force(controller: Controller, alice, events, clock: Clock) -> None:
+	controller.set_policy(alice.id, Policy(child_id=alice.id))  # no bedtime, so midnight does not relock
+	unifi = FakeEnforcer("unifi", Mode.NETWORK)
+	plug = FakeEnforcer("plug", Mode.POWER)
+	device = add_device(controller, "Xbox", alice.id, unifi, plug, power_opt_in=True)
+	hour = await controller.lock(alice.id, minutes=60, reason="dinner")
+	clock.advance(minutes=20)
+	rest_of_day = await controller.lock(alice.id, reason="lock switch")
+	clock.advance(minutes=45)
+	await controller.tick()
+	assert hour.status == OverrideStatus.EXPIRED
+	assert hour.restore["revert"] == []  # nothing was released
+	assert unifi.locked[device.id] and plug.locked[device.id]
+	assert rest_of_day.status == OverrideStatus.CONFIRMED
+	state = controller.child_state(alice.id)
+	assert state.status == ChildStatus.LOCKED and state.lock_id == rest_of_day.id
+	assert "enforcement.unconfirmed" not in types(events)
+	# The surviving lock releases everything when it ends.
+	clock.now = rest_of_day.expires_at
+	await controller.tick()
+	assert not unifi.locked[device.id] and not plug.locked[device.id]
+
+
+async def test_expiry_releases_an_enforcer_the_later_lock_never_asked(controller: Controller, alice, clock: Clock) -> None:
+	unifi = FakeEnforcer("unifi", Mode.NETWORK)
+	plug = FakeEnforcer("plug", Mode.POWER)
+	device = add_device(controller, "Xbox", alice.id, unifi, plug, power_opt_in=True)
+	await controller.lock(alice.id, minutes=30)
+	await controller.lock(alice.id, mode="power")
+	clock.advance(minutes=31)
+	await controller.tick()
+	# Power is still held by the second lock; the network block had no other holder and is let go.
+	assert plug.locked[device.id]
+	assert not unifi.locked[device.id]
+
+
+async def test_hour_lock_expiring_inside_bedtime_keeps_bedtime(controller: Controller, alice, clock: Clock) -> None:
+	unifi = FakeEnforcer("unifi", Mode.NETWORK)
+	device = add_device(controller, "PS5", alice.id, unifi)
+	clock.now = datetime(2026, 10, 21, 19, 30, tzinfo=TZ)
+	await controller.lock(alice.id, minutes=60)
+	clock.now = datetime(2026, 10, 21, 20, 0, tzinfo=TZ)
+	await controller.tick()  # bedtime lock created
+	clock.now = datetime(2026, 10, 21, 20, 35, tzinfo=TZ)
+	await controller.tick()  # hour lock expires
+	assert unifi.locked[device.id]
+	assert controller.child_state(alice.id).status == ChildStatus.BEDTIME
+
+
+async def test_unlock_ends_every_lock_once(controller: Controller, alice, events) -> None:
+	unifi = FakeEnforcer("unifi", Mode.NETWORK)
+	device = add_device(controller, "PS5", alice.id, unifi)
+	first = await controller.lock(alice.id, minutes=60)
+	second = await controller.lock(alice.id)
+	unlock = await controller.unlock(alice.id)
+	assert first.status == OverrideStatus.CANCELLED and second.status == OverrideStatus.CANCELLED
+	assert [call.method for call in unifi.calls] == ["apply", "apply", "revert"]
+	assert len(unlock.results) == 1
+	assert unlock.status == OverrideStatus.CONFIRMED
+	applied = [event for event in events if event.type == "override.applied" and event.payload["override"]["id"] == unlock.id]
+	assert len(applied) == 1
+	assert not unifi.locked[device.id]
+	# Reconcile has nothing pending to confirm on the dead locks.
+	await controller.reconcile()
+	assert types(events).count("override.confirmed") == 3
+
+
+async def test_device_unlock_keeps_a_child_lock_on_other_devices(controller: Controller, alice) -> None:
+	unifi = FakeEnforcer("unifi", Mode.NETWORK)
+	ps5 = add_device(controller, "PS5", alice.id, unifi)
+	xbox = add_device(controller, "Xbox", alice.id, unifi)
+	lock = await controller.lock(alice.id)
+	await controller.unlock(alice.id, scope=Scope("device", device_id=ps5.id))
+	assert not unifi.locked[ps5.id]
+	assert unifi.locked[xbox.id]
+	assert lock.status == OverrideStatus.CONFIRMED  # still in force for the Xbox
+	assert controller.child_state(alice.id).lock_id == lock.id
+
+
+async def test_grant_lifts_exhaustion_but_not_a_parents_lock(controller: Controller, alice, clock: Clock) -> None:
+	controller.set_policy(alice.id, Policy(child_id=alice.id, allowance_minutes=[5] * 7))
+	unifi = FakeEnforcer("unifi", Mode.NETWORK, in_use=True)
+	device = add_device(controller, "PS5", alice.id, unifi)
+	await controller.tick()
+	clock.advance(minutes=6)
+	await controller.tick()
+	assert controller.child_state(alice.id).status == ChildStatus.EXHAUSTED
+	parent = await controller.lock(alice.id, reason="dinner", source="guardian:andy")
+	await controller.grant(alice.id, 30, source="taskmate")
+	assert unifi.locked[device.id]
+	state = controller.child_state(alice.id)
+	assert state.status == ChildStatus.LOCKED and state.lock_id == parent.id
+	assert state.remaining == 29

@@ -27,7 +27,8 @@ async def test_lock_blocks_network_cuts_power_and_asks_the_parent(hass: HomeAssi
 		"Xbox powered off (power:input_boolean.plug_xbox).",
 	]
 	assert hass.states.get("sensor.alice_status").state == "locked"
-	assert hass.states.get("sensor.alice_enforcement").state == "degraded"
+	assert hass.states.get("sensor.alice_enforcement").state == "pending"  # the manual step is not a problem yet
+	assert hass.states.get("binary_sensor.alice_any_enforcer_degraded").state == "off"
 	assert hass.states.get("switch.alice_lock").state == "on"
 	assert hass.states.get("switch.alice_lock").attributes["reason"] == "dinner"
 	assert "override.applied" in events
@@ -55,6 +56,11 @@ async def test_unlock_releases(hass: HomeAssistant, setup) -> None:
 	assert hass.states.get(PLUG_XBOX).state == "on"
 	assert hass.states.get("sensor.alice_status").state == "free"
 	assert response["status"] == "applied"  # manual unlock awaits the parent too
+	assert response["summary"] == [
+		"PS5 network unblocked (network:input_boolean.block_ps5).",
+		"PS5 manual release requested (manual:33333333-3333-4333-8333-333333333333). PS5 waiting for a parent to press done. Awaiting confirmation.",
+		"Xbox power restored (power:input_boolean.plug_xbox).",
+	]
 
 
 async def test_grant_and_allowance(hass: HomeAssistant, setup) -> None:

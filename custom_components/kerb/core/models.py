@@ -143,6 +143,7 @@ class EnforcementStatus(StrEnum):
 	"""The per-child enforcement sensor."""
 
 	CONFIRMED = "confirmed"
+	PENDING = "pending"
 	PARTIAL = "partial"
 	DEGRADED = "degraded"
 	UNKNOWN = "unknown"
