@@ -1,18 +1,54 @@
 {
   "v": 4,
-  "createdOnFiles": {"v": 1, "at": "2026-10-21T20:05:00Z"},
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-10-21T20:05:00Z"
+  },
   "lists": "css",
   "title": "Handrail: keep the floor, add a path",
-  "order": ["cover", "australia", "adults", "cliff", "floorpath", "household", "path", "home", "loop", "platforms", "roadmap", "asks", "close"],
+  "order": [
+    "cover",
+    "australia",
+    "adults",
+    "cliff",
+    "today",
+    "floorpath",
+    "household",
+    "path",
+    "home",
+    "loop",
+    "platforms",
+    "roadmap",
+    "asks",
+    "close"
+  ],
   "sections": {
-    "open": {"description": "Handrail in one line: keep the minimum age, add a certified path beside it.", "start": "cover"},
-    "cost": {"description": "What a ban costs on the early evidence: it leaks, it checks every adult, it teaches nothing.", "start": "australia"},
-    "proposal": {"description": "The floor and the path, one household, the home boundary, honest read-back and why platforms gain.", "start": "floorpath"},
-    "asks": {"description": "The calendar, three asks and the price.", "start": "roadmap"}
+    "open": {
+      "description": "Handrail in one line: keep the minimum age, add a certified path beside it.",
+      "start": "cover"
+    },
+    "cost": {
+      "description": "What a ban costs on the early evidence: it leaks, it checks every adult, it teaches nothing.",
+      "start": "australia"
+    },
+    "proposal": {
+      "description": "Where parents are today, then the floor and the path, one household, the home boundary, honest read-back and why platforms gain.",
+      "start": "today"
+    },
+    "asks": {
+      "description": "The calendar, three asks and the price.",
+      "start": "roadmap"
+    }
   },
   "faces": {
-    "fraunces": {"family": "Fraunces", "href": "https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300..700;1,300..700&display=swap"},
-    "source-sans-3": {"family": "Source Sans 3", "href": "https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600&display=swap"}
+    "fraunces": {
+      "family": "Fraunces",
+      "href": "https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300..700;1,300..700&display=swap"
+    },
+    "source-sans-3": {
+      "family": "Source Sans 3",
+      "href": "https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600&display=swap"
+    }
   },
   "designSystems": []
 }
