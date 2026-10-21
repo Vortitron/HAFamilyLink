@@ -129,6 +129,10 @@ def test_other_models_validate(registry: Registry) -> None:
 			id=UUID,
 		).to_dict()
 	)
+	# allow_always use is recorded at rate 0.0: counted, never charged.
+	validator("ledger_entry", registry).validate(
+		LedgerEntry(UUID, "2026-10-21", "usage", 3, NOW, rate=0.0, device_id=UUID, rule="tag:educational", id=UUID).to_dict()
+	)
 	validator("usage_sample", registry).validate(UsageSample(UUID, UUID, NOW, NOW, 600, "observer", NOW, app="steam:1").to_dict())
 	validator("request", registry).validate(
 		Request(UUID, "more_time", NOW, "family_safety", minutes=15, device_id=UUID, id=UUID).to_dict()

@@ -34,11 +34,13 @@
     "rate": {
       "type": "number",
       "enum": [
+        0.0,
         0.5,
         1.0,
         2.0
       ],
-      "default": 1.0
+      "default": 1.0,
+      "description": "Weight applied to the minutes. 0.0 records allow_always use: counted, never charged."
     },
     "device_id": {
       "type": "string",

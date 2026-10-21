@@ -4,11 +4,17 @@ Every class here mirrors one JSON Schema in docs/schemas. Field names match
 the schema property names so ``to_dict`` output validates directly. Vendor
 identifiers never appear in these objects; they live in the enforcer's own
 store.
+
+Unknown properties are allowed and preserved (SPEC.md section 3). Every
+object that is read back from storage keeps them in ``extras`` and writes
+them out again unchanged, so an ``x_`` extension from another client
+survives a round trip through this controller.
 """
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from collections.abc import Iterable
+from dataclasses import asdict, dataclass, field, fields
 from datetime import datetime
 from enum import StrEnum
 from typing import Any
@@ -33,6 +39,21 @@ def _parse_dt(value: str | None) -> datetime | None:
 
 def _strip_none(data: dict[str, Any]) -> dict[str, Any]:
 	return {key: value for key, value in data.items() if value is not None}
+
+
+def _extras(data: dict[str, Any], known: Iterable[str]) -> dict[str, Any]:
+	"""The properties of ``data`` this model does not understand, kept verbatim."""
+	known = set(known)
+	return {key: value for key, value in data.items() if key not in known}
+
+
+def _field_names(cls: type) -> set[str]:
+	return {item.name for item in fields(cls)} - {"extras"}
+
+
+def _with_extras(data: dict[str, Any], extras: dict[str, Any]) -> dict[str, Any]:
+	"""Known properties first, then the preserved ones. A known key always wins."""
+	return {**extras, **data}
 
 
 class AgeBand(StrEnum):
@@ -165,6 +186,9 @@ class Health:
 		"""Whether read-backs from this enforcer can be believed."""
 		return self.status in (HealthStatus.HEALTHY, HealthStatus.DEGRADED)
 
+	def to_dict(self) -> dict[str, Any]:
+		return {"status": str(self.status), "reason": self.reason}
+
 
 @dataclass(frozen=True)
 class Scope:
@@ -172,6 +196,7 @@ class Scope:
 	device_id: str | None = None
 	app: str | None = None
 	tag: str | None = None
+	extras: dict[str, Any] = field(default_factory=dict, compare=False)
 
 	def covers_device(self, device_id: str) -> bool:
 		if self.type == "all":
@@ -182,7 +207,8 @@ class Scope:
 		return False
 
 	def to_dict(self) -> dict[str, Any]:
-		return _strip_none(asdict(self))
+		data = _strip_none(asdict(self))
+		return _with_extras(data, data.pop("extras"))
 
 	@classmethod
 	def from_dict(cls, data: dict[str, Any] | None) -> Scope:
@@ -192,6 +218,7 @@ class Scope:
 			device_id=data.get("device_id"),
 			app=data.get("app"),
 			tag=data.get("tag"),
+			extras=_extras(data, _field_names(cls)),
 		)
 
 
@@ -206,9 +233,10 @@ class EnforcerResult:
 	detail: str = ""
 	confirmed_at: datetime | None = None
 	restore: dict[str, Any] | None = None
+	extras: dict[str, Any] = field(default_factory=dict, compare=False)
 
 	def to_dict(self) -> dict[str, Any]:
-		return _strip_none(
+		data = _strip_none(
 			{
 				"enforcer": self.enforcer,
 				"device_id": self.device_id,
@@ -219,6 +247,7 @@ class EnforcerResult:
 				"restore": self.restore,
 			}
 		)
+		return _with_extras(data, self.extras)
 
 	@classmethod
 	def from_dict(cls, data: dict[str, Any]) -> EnforcerResult:
@@ -230,6 +259,7 @@ class EnforcerResult:
 			detail=data.get("detail", ""),
 			confirmed_at=_parse_dt(data.get("confirmed_at")),
 			restore=data.get("restore"),
+			extras=_extras(data, _field_names(cls)),
 		)
 
 
@@ -250,6 +280,7 @@ class Override:
 	restore: dict[str, Any] = field(default_factory=dict)
 	cancels: str | None = None
 	id: str = field(default_factory=new_id)
+	extras: dict[str, Any] = field(default_factory=dict, compare=False)
 
 	def active_at(self, now: datetime) -> bool:
 		"""Whether the decision is in force at ``now``.
@@ -281,7 +312,7 @@ class Override:
 			data["reason"] = self.reason
 		if self.cancels is not None:
 			data["cancels"] = self.cancels
-		return data
+		return _with_extras(data, self.extras)
 
 	@classmethod
 	def from_dict(cls, data: dict[str, Any]) -> Override:
@@ -299,6 +330,7 @@ class Override:
 			results=[EnforcerResult.from_dict(item) for item in data.get("results", [])],
 			restore=dict(data.get("restore") or {}),
 			cancels=data.get("cancels"),
+			extras=_extras(data, _field_names(cls)),
 		)
 
 
@@ -328,9 +360,22 @@ class RatingClaim:
 	source: str
 	retrieved_at: str
 	region: str | None = None
+	extras: dict[str, Any] = field(default_factory=dict, compare=False)
 
 	def to_dict(self) -> dict[str, Any]:
-		return _strip_none(asdict(self))
+		data = _strip_none(asdict(self))
+		return _with_extras(data, data.pop("extras"))
+
+	@classmethod
+	def from_dict(cls, data: dict[str, Any]) -> RatingClaim:
+		return cls(
+			organisation=data["organisation"],
+			value=data["value"],
+			source=data["source"],
+			retrieved_at=data["retrieved_at"],
+			region=data.get("region"),
+			extras=_extras(data, _field_names(cls)),
+		)
 
 
 @dataclass
@@ -346,6 +391,7 @@ class Policy:
 	tag_rules: dict[str, Effect] = field(default_factory=dict)
 	grant_cap_minutes_per_day: int | None = None
 	id: str = field(default_factory=new_id)
+	extras: dict[str, Any] = field(default_factory=dict, compare=False)
 
 	def __post_init__(self) -> None:
 		if len(self.allowance_minutes) != WEEKDAYS:
@@ -370,7 +416,7 @@ class Policy:
 			data["rating_ceiling"] = self.rating_ceiling.to_dict()
 		if self.grant_cap_minutes_per_day is not None:
 			data["grant_cap_minutes_per_day"] = self.grant_cap_minutes_per_day
-		return data
+		return _with_extras(data, self.extras)
 
 	@classmethod
 	def from_dict(cls, data: dict[str, Any]) -> Policy:
@@ -387,10 +433,11 @@ class Policy:
 				None if item is None else TimeWindow(item["start"], item["end"])
 				for item in data.get("bedtime", [None] * WEEKDAYS)
 			],
-			rating_ceiling=None if rating is None else RatingClaim(**rating),
+			rating_ceiling=None if rating is None else RatingClaim.from_dict(rating),
 			app_rules={item["app"]: Effect(item["effect"]) for item in data.get("app_rules", [])},
 			tag_rules={item["tag"]: Effect(item["effect"]) for item in data.get("tag_rules", [])},
 			grant_cap_minutes_per_day=data.get("grant_cap_minutes_per_day"),
+			extras=_extras(data, _field_names(cls)),
 		)
 
 
@@ -412,17 +459,20 @@ class LedgerEntry:
 	source: str | None = None
 	reason: str | None = None
 	id: str = field(default_factory=new_id)
+	extras: dict[str, Any] = field(default_factory=dict, compare=False)
 
 	def to_dict(self) -> dict[str, Any]:
 		data = asdict(self)
 		data["recorded_at"] = self.recorded_at.isoformat()
-		return _strip_none(data)
+		extras = data.pop("extras")
+		return _with_extras(_strip_none(data), extras)
 
 	@classmethod
 	def from_dict(cls, data: dict[str, Any]) -> LedgerEntry:
-		data = dict(data)
-		data["recorded_at"] = datetime.fromisoformat(data["recorded_at"])
-		return cls(**data)
+		known = _field_names(cls)
+		kwargs = {key: value for key, value in data.items() if key in known}
+		kwargs["recorded_at"] = datetime.fromisoformat(data["recorded_at"])
+		return cls(**kwargs, extras=_extras(data, known))
 
 
 @dataclass
@@ -532,6 +582,11 @@ class DeviceRef:
 	platform: Platform = Platform.OTHER
 	power_off_allowed: bool = False
 
+	def to_dict(self) -> dict[str, Any]:
+		data = asdict(self)
+		data["platform"] = str(self.platform)
+		return data
+
 
 @dataclass(frozen=True)
 class EnforcedState:
@@ -542,6 +597,16 @@ class EnforcedState:
 	in_use: bool | None = None
 	detail: str = ""
 	observed_at: datetime | None = None
+
+	def to_dict(self) -> dict[str, Any]:
+		"""``locked`` and ``in_use`` stay in the document as null: unknown is a value, not an omission."""
+		return {
+			"device_id": self.device_id,
+			"locked": self.locked,
+			"in_use": self.in_use,
+			"detail": self.detail,
+			"observed_at": _iso(self.observed_at),
+		}
 
 
 @dataclass
