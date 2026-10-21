@@ -1,12 +1,12 @@
-# Kerb diagrams
+# Handrail diagrams
 
-Eight diagram specifications for the proposal "Kerb: a floor and a path". Each one lists the exact boxes, arrows and labels so a designer can draw it without reading the proposal. Style notes for all eight: plain line drawing, two tones plus one accent, sans-serif labels, no logos of real companies (use the text name in a plain box), no photographs, no real children. UK English throughout. Where a number appears it is taken from the proposal and should be kept as written. Every household count is illustrative, year three, and is labelled so.
+Eight diagram specifications for the proposal "Handrail: a floor and a path". Each one lists the exact boxes, arrows and labels so a designer can draw it without reading the proposal. Style notes for all eight: plain line drawing, two tones plus one accent, sans-serif labels, no logos of real companies (use the text name in a plain box), no photographs, no real children. UK English throughout. Where a number appears it is taken from the proposal and should be kept as written. Every household count is illustrative, year three, and is labelled so.
 
 ---
 
 ## D1. Two instruments side by side
 
-**Caption.** A minimum-age ban and a Kerb household plan are both compliance instruments. One checks everyone and teaches nothing. The other checks no child's identity and teaches for ten years. Kerb is offered beside the ban, not instead of it.
+**Caption.** A minimum-age ban and a Handrail household plan are both compliance instruments. One checks everyone and teaches nothing. The other checks no child's identity and teaches for ten years. Handrail is offered beside the ban, not instead of it.
 
 **Layout.** Two equal columns, a thin vertical rule between them, a four-row footer table spanning both columns.
 
@@ -17,11 +17,11 @@ Eight diagram specifications for the proposal "Kerb: a floor and a path". Each o
 - At the base of the wall on the far side, a small cliff edge with a child icon standing at the top, labelled "16th birthday: full access, no preparation".
 - Small callout bottom left: "81% of 10 to 15 year olds still using, measured three months in (eSafety, July 2026)".
 
-**Right column, header: "Kerb household plan".**
+**Right column, header: "Handrail household plan".**
 - Bottom left: a low kerb stone (a step, not a wall), labelled "the floor: statutory default profile, published by the regulator".
 - From the kerb, a path rises to the top right in six treads. Tread labels in order: "Stopping", "Choosing", "Meeting", "Noticing", "Judging", "Owning".
 - A child icon on the third tread. Two adult icons and a small speech-bubble icon labelled "guide" standing beside the path, not on it.
-- At the top of the path, three plain boxes labelled "OS", "Console", "Social service", each with a small circular badge labelled "Kerb mark".
+- At the top of the path, three plain boxes labelled "OS", "Console", "Social service", each with a small circular badge labelled "Handrail mark".
 - A dashed horizontal line at the height of the first tread, running across the whole column, labelled "a child with no plan stays here".
 - Small callout bottom right: "No field for name, date of birth, ID, competence or reasons. One pairwise id per platform."
 
@@ -65,7 +65,7 @@ Eight diagram specifications for the proposal "Kerb: a floor and a path". Each o
 - A box "Guide (AI, certified)", drawn inside the home, connected only to "Household controller" by a double-headed arrow labelled "reads ledger and tags, proposes, never decides". A small note: "runs here by default; if any part is remote it gets a minimal view, no retention, no training".
 - A list in the corner headed "Never leaves this box:" with items "name, date of birth, location beyond country, credentials, content, messages, device ids, per-app usage, milestones, reasons, who made a decision".
 
-**Right of the boundary, four plain boxes stacked:** "Operating system", "Console", "Game store", "Social service". Each has a small badge "Kerb mark, Level n" (write "Level 1", "Level 3", "Level 2", "Level 2" respectively, as examples). Each box carries a different short random string labelled once: "pairwise child id, different for every platform".
+**Right of the boundary, four plain boxes stacked:** "Operating system", "Console", "Game store", "Social service". Each has a small badge "Handrail mark, Level n" (write "Level 1", "Level 3", "Level 2", "Level 2" respectively, as examples). Each box carries a different short random string labelled once: "pairwise child id, different for every platform".
 
 **Arrows from "Household controller" crossing the boundary to each platform box:** one solid arrow labelled "policy effects (age band, country, budget to 15 min, windows to 30 min, bedtime, rules by app id and rating; tags resolved at home)" and one solid arrow labelled "override (effect, scope, expiry; no reason, no actor)". **Return arrows from each platform:** "result: applied, confirmed, partial, failed, unknown", "usage facts: device, app, minutes", "child request: app id + type, no text".
 
@@ -138,13 +138,13 @@ Eight diagram specifications for the proposal "Kerb: a floor and a path". Each o
 
 **Markers on the rungs, as of 2027:** Level 0 and Level 1: "household routers, smart plugs and the reference controller". Levels 2, 3 and 4: dotted outline with the text "nobody yet". No vendor names appear on the ladder.
 
-**Separate box, bottom left, headed "Today, as observed by households. Not certified. No vendor has applied."** Plain text, no hazard symbols: "Most consoles and phones: native parental controls that a household can set in the vendor's own app, with no read-back. Some PC family services: budgets and windows the household can set by hand. Network and plug controls: cut-off only. No vendor exposes a parental-control interface." A note: "Kerb grades only those who apply."
+**Separate box, bottom left, headed "Today, as observed by households. Not certified. No vendor has applied."** Plain text, no hazard symbols: "Most consoles and phones: native parental controls that a household can set in the vendor's own app, with no read-back. Some PC family services: budgets and windows the household can set by hand. Network and plug controls: cut-off only. No vendor exposes a parental-control interface." A note: "Handrail grades only those who apply."
 
 **Centre: two boxes connected by an arrow.** "Self-service conformance suite (runs on a laptop)" then "Public registry". Inside the registry box two sample rows: "Example TV OS | Level 2 | certified 2028-09 | suite 1.x | status: listed" and "Default profile, UK | version 2 | published by regulator 2028-04". Beneath: "annual re-test against the suite version on record; minor versions never invalidate a listing; notice, 90-day cure, independent appeal, then delisting, prospective only".
 
 **Right: a fan of six plain boxes labelled with jurisdictions** ("UK Ofcom", "Australia eSafety", "EU Commission", "Greece", "Denmark", "Sweden") each with an arrow pointing to the single registry box, every arrow labelled "recognises the mark". Beneath the Australia box in small type: "path requires an amendment to primary legislation".
 
-**Inset, bottom right, small:** "The IARC pattern: one questionnaire, nine rating authorities" drawn as one form feeding five small badge outlines labelled "ESRB", "PEGI", "USK", "ClassInd", "ACB" with the caption "five of nine shown". Note beneath: "Kerb sits beside ISO/IEC 27566-1; field names mirror Matter Content Control where they match."
+**Inset, bottom right, small:** "The IARC pattern: one questionnaire, nine rating authorities" drawn as one form feeding five small badge outlines labelled "ESRB", "PEGI", "USK", "ClassInd", "ACB" with the caption "five of nine shown". Note beneath: "Handrail sits beside ISO/IEC 27566-1; field names mirror Matter Content Control where they match."
 
 ---
 
@@ -182,7 +182,7 @@ Eight diagram specifications for the proposal "Kerb: a floor and a path". Each o
 - "Twelve-month review: pilot outcomes reported beside ban outcomes" diamond at Q2 2028.
 
 **Roadmap rows beneath, plain colour, drawn as bars:**
-- "Kerb 1.0 specification and conformance suite" 2027 Q1 to Q3.
+- "Handrail 1.0 specification and conformance suite" 2027 Q1 to Q3.
 - "Reference household controller (household devices and allow-listed network controls)" 2027 Q1 to Q4.
 - "Steward curates first 200 to 500 apps against the vocabulary" 2027 Q2 to Q4.
 - "Pilot: 400 households across income bands, university as data controller" 2027 Q3 to 2028 Q3.

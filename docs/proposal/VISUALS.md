@@ -1,6 +1,6 @@
-# Kerb imagined screens
+# Handrail imagined screens
 
-Five imagined screens for the proposal "Kerb: a floor and a path". None of these exist. They are described precisely enough to be drawn as static mock-ups. All example data belongs to one fictional household, the Ekblad family, with no relation to any real person. Every household count and registry row is illustrative, year three, and is labelled so.
+Five imagined screens for the proposal "Handrail: a floor and a path". None of these exist. They are described precisely enough to be drawn as static mock-ups. All example data belongs to one fictional household, the Ekblad family, with no relation to any real person. Every household count and registry row is illustrative, year three, and is labelled so.
 
 **The fictional household.** Guardians: Sara and Jonas. Children: Ines (7, age band under 13, milestone Choosing), Teo (11, age band under 13, milestone Meeting), Maja (14, age band 13 to 15, milestone Noticing, so her parents see totals only). Devices: a shared tablet (Ines), a Switch and the family television (Teo, shared), a phone and a school laptop (Maja), a PlayStation in the living room (shared, not participating). Subscribed profile: "Swedish health guidance" with local changes. Evening reference date for every screen: Sunday 18 October 2026.
 
@@ -29,7 +29,7 @@ Rules for every screen. No child's face. No map. No message text. No search term
 
 5. **Request card.** "Teo asked at 16:05 to play Rocket Racers." Three tag chips with counts: "friends-only multiplayer (61)", "chat-with-strangers possible (14)", "voice chat (22)", with a small label "votes illustrative, year three". A four-line draft headed "If you want to talk first": "Who can hear you in voice chat. What to do if someone asks where you live. How to leave a server. Tell us if it feels wrong." Buttons: "Yes, friends-only, voice off", "Talk first", "Ask him why".
 
-6. **Enforcement health strip.** Four device rows, each with a dot and a line: "Switch: confirmed 16:10" (green); "Television: confirmed 16:10" (green); "Tablet: not Teo's" (grey); "PlayStation: not participating, network control only" (grey). A tap target "What do the colours mean?" opens the rule: "Green: confirmed by read-back. Amber: a certified platform has not confirmed; shown as locked, never as free. Grey: not a Kerb platform; the controller can only cut its network."
+6. **Enforcement health strip.** Four device rows, each with a dot and a line: "Switch: confirmed 16:10" (green); "Television: confirmed 16:10" (green); "Tablet: not Teo's" (grey); "PlayStation: not participating, network control only" (grey). A tap target "What do the colours mean?" opens the rule: "Green: confirmed by read-back. Amber: a certified platform has not confirmed; shown as locked, never as free. Grey: not a Handrail platform; the controller can only cut its network."
 
 7. **Footer.** "Raw ledger kept 31 days, then deleted. Milestones kept as a name and a date only. Nothing leaves this house without your say. Teo can see everything on this screen."
 
@@ -37,7 +37,7 @@ Rules for every screen. No child's face. No map. No message text. No search term
 
 ## V2. A child's path (Teo's tablet, the controller app, age 11)
 
-**Purpose.** The child sees the same facts as the parent, in his own words, and can ask or disagree. This is the household's own app, not a platform surface. On a certified platform Teo would see only the fixed notice: "A household plan applies. Set by your guardian. Open your Kerb app for the reason."
+**Purpose.** The child sees the same facts as the parent, in his own words, and can ask or disagree. This is the household's own app, not a platform surface. On a certified platform Teo would see only the fixed notice: "A household plan applies. Set by your guardian. Open your Handrail app for the reason."
 
 **Layout.**
 
@@ -63,7 +63,7 @@ Rules for every screen. No child's face. No map. No message text. No search term
 
 **Layout, three panels with a banner.**
 
-**Banner across the top.** "Kerb certified implementations. This registry lists platforms, controllers, guides and default profiles, not households. No household, child or account is identifiable here or anywhere in the steward. The steward publishes no household data."
+**Banner across the top.** "Handrail certified implementations. This registry lists platforms, controllers, guides and default profiles, not households. No household, child or account is identifiable here or anywhere in the steward. The steward publishes no household data."
 
 **Left panel: registry table.** Columns: Entry, Level, Certified, Suite version, Last field report, Status. Example rows (illustrative, 2030 dates):
 - "Example TV OS | 2 | 2030-03-03 | 1.x | 2030-09 | Listed"
@@ -87,7 +87,7 @@ Filters above the table: "Jurisdiction: UK", "Type: all", "Status: all". A legen
 
 **Layout.**
 
-1. **Header.** "Kerb conformance: Level 2, certified 3 March 2030 against suite 1.x, re-test due March 2031 against the same major version." A single switch labelled "Accept Kerb household plans" set to on. Beside it a checklist headed "What Level 3 needs": "grants (not started)", "child requests (in progress)", "per-app rules (not started)".
+1. **Header.** "Handrail conformance: Level 2, certified 3 March 2030 against suite 1.x, re-test due March 2031 against the same major version." A single switch labelled "Accept Handrail household plans" set to on. Beside it a checklist headed "What Level 3 needs": "grants (not started)", "child requests (in progress)", "per-app rules (not started)".
 
 2. **Field mapping table.** Columns: Inbound plan field, How we honour it, Reported back as. Rows:
    - "Daily allowance (15-minute steps) | native | applied"
@@ -108,7 +108,7 @@ Filters above the table: "Jurisdiction: UK", "Type: all", "Status: all". A legen
 
 6. **Box headed "What this claim supports".** Three rows: "UK Online Safety Act: supports, where the s.214A regulations name the route"; "DSA Article 28 guidelines: supports"; "Australia Social Media Minimum Age Act: does not address; the Act has no parental route and the path would need an amendment". Each with a plain tick or the words "does not address".
 
-7. **Footer banner.** "Data received through Kerb may be used only to apply the plan, read back, log conformance, prevent abuse and run child-safety features. Never for advertising, ad measurement, cross-service profiling, sale or sharing. Field audit is by the steward's synthetic test accounts; no household log leaves this platform." Button: "Run conformance suite". Button: "Submit to steward".
+7. **Footer banner.** "Data received through Handrail may be used only to apply the plan, read back, log conformance, prevent abuse and run child-safety features. Never for advertising, ad measurement, cross-service profiling, sale or sharing. Field audit is by the steward's synthetic test accounts; no household log leaves this platform." Button: "Run conformance suite". Button: "Submit to steward".
 
 ---
 
@@ -116,7 +116,7 @@ Filters above the table: "Jurisdiction: UK", "Type: all", "Status: all". A legen
 
 **Purpose.** Show that set-up is three questions, that no date of birth is ever asked, that devices join by choice and not by discovery, and that the floor applies before anyone does anything.
 
-**Layout.** A chat screen headed "Setting up Kerb for your house". The guide's messages on the left, Jonas's choices as large buttons.
+**Layout.** A chat screen headed "Setting up Handrail for your house". The guide's messages on the left, Jonas's choices as large buttons.
 
 1. **Guide.** "Before we start: every child account on a certified platform already has the statutory default profile your regulator published. Nothing you do here can give a child less than that. What you can do is give them a path above it. I only need three things."
 
@@ -138,4 +138,4 @@ Filters above the table: "Jurisdiction: UK", "Type: all", "Status: all". A legen
 
 5. **Guide, closing message.** "That's enough to start. Here is what I will never see: what they watch, what they say, where they are, their birthdays. I work on this phone; if you ever turn on the remote helper I get only budgets, tag lookups and milestone dates, and keep nothing. Here is what they will always see: everything I show you. Bedtime is the rule I will protect first and hand over last. You can delete all of this in one tap, and when a child leaves the plan they choose to export or delete their milestones, and everything else goes."
 
-6. **Footer.** Two buttons: "Start" and "Show me the ledger Maja will see". Beneath, in small type: "Kerb is an open standard. This app is one of several certified to run it."
+6. **Footer.** Two buttons: "Start" and "Show me the ledger Maja will see". Beneath, in small type: "Handrail is an open standard. This app is one of several certified to run it."
