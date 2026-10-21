@@ -28,7 +28,7 @@
       },
       "guardians": {
         "title": "Guardians and PIN",
-        "description": "Only guardians may lock, unlock and grant from the dashboard. Automations are trusted. The PIN is optional and applies to everyone.",
+        "description": "Only guardians may lock, unlock and grant from the dashboard. Automations are trusted. The PIN is optional and applies to everyone: with one set, a guardian enters it on the PIN entity first, which arms the dashboard for five minutes.",
         "data": {
           "guardians": "Guardians",
           "pin": "PIN"
@@ -138,6 +138,9 @@
     },
     "binary_sensor": {
       "enforcer_degraded": { "name": "Any enforcer degraded" }
+    },
+    "text": {
+      "pin": { "name": "PIN" }
     }
   },
   "services": {
@@ -192,7 +195,8 @@
       "description": "Tells Kerb a parent has done the requested action in the vendor app.",
       "fields": {
         "child": { "name": "Child", "description": "The child's name as configured." },
-        "device": { "name": "Device", "description": "The manual device's name." }
+        "device": { "name": "Device", "description": "The manual device's name." },
+        "pin": { "name": "PIN", "description": "Not needed. Confirming a manual step decides nothing." }
       }
     }
   },

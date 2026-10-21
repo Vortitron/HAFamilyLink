@@ -56,5 +56,5 @@ class ManualDoneButton(KerbChildEntity, ButtonEntity):
 		self._attr_translation_placeholders = {"device": device_name}
 
 	async def async_press(self) -> None:
-		self.guard()
+		self.guard(check_pin=False)
 		await self.coordinator.hub.async_confirm_manual(self._device_id)

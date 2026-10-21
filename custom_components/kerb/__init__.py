@@ -36,17 +36,26 @@ from .const import (
 	SERVICE_SET_ALLOWANCE_TODAY,
 	SERVICE_UNLOCK,
 )
-from .core.auth import BadPin, NotAGuardian, authorise
+from .core.auth import BadPin, NotAGuardian
 from .core.ledger import GrantCapExceeded
 from .core.models import Override, Scope
 from .hub import KerbConfigEntry, KerbHub
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.NUMBER, Platform.SENSOR, Platform.SWITCH]
+PLATFORMS: list[Platform] = [
+	Platform.BINARY_SENSOR,
+	Platform.BUTTON,
+	Platform.NUMBER,
+	Platform.SENSOR,
+	Platform.SWITCH,
+	Platform.TEXT,
+]
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 MODES = ("auto", "pause", "zero_allowance", "network", "power", "manual")
+# A blank or null PIN from a template means "none given", never a refusal.
+PIN_FIELD = vol.Any(None, cv.string)
 
 LOCK_SCHEMA = vol.Schema(
 	{
@@ -55,7 +64,7 @@ LOCK_SCHEMA = vol.Schema(
 		vol.Optional(ATTR_SCOPE, default="all"): cv.string,
 		vol.Optional(ATTR_MODE, default="auto"): vol.In(MODES),
 		vol.Optional(ATTR_REASON, default=""): cv.string,
-		vol.Optional(ATTR_PIN): cv.string,
+		vol.Optional(ATTR_PIN): PIN_FIELD,
 	}
 )
 UNLOCK_SCHEMA = vol.Schema(
@@ -63,7 +72,7 @@ UNLOCK_SCHEMA = vol.Schema(
 		vol.Required(ATTR_CHILD): cv.string,
 		vol.Optional(ATTR_SCOPE, default="all"): cv.string,
 		vol.Optional(ATTR_REASON, default=""): cv.string,
-		vol.Optional(ATTR_PIN): cv.string,
+		vol.Optional(ATTR_PIN): PIN_FIELD,
 	}
 )
 GRANT_SCHEMA = vol.Schema(
@@ -72,17 +81,19 @@ GRANT_SCHEMA = vol.Schema(
 		vol.Required(ATTR_MINUTES): vol.All(vol.Coerce(int), vol.Range(min=1, max=1440)),
 		vol.Optional(ATTR_REASON, default=""): cv.string,
 		vol.Optional(ATTR_SOURCE): cv.string,
-		vol.Optional(ATTR_PIN): cv.string,
+		vol.Optional(ATTR_PIN): PIN_FIELD,
 	}
 )
 ALLOWANCE_SCHEMA = vol.Schema(
 	{
 		vol.Required(ATTR_CHILD): cv.string,
 		vol.Required(ATTR_MINUTES): vol.All(vol.Coerce(int), vol.Range(min=0, max=1440)),
-		vol.Optional(ATTR_PIN): cv.string,
+		vol.Optional(ATTR_PIN): PIN_FIELD,
 	}
 )
-CONFIRM_MANUAL_SCHEMA = vol.Schema({vol.Required(ATTR_CHILD): cv.string, vol.Required(ATTR_DEVICE): cv.string})
+CONFIRM_MANUAL_SCHEMA = vol.Schema(
+	{vol.Required(ATTR_CHILD): cv.string, vol.Required(ATTR_DEVICE): cv.string, vol.Optional(ATTR_PIN): PIN_FIELD}
+)
 
 
 def get_hub(hass: HomeAssistant) -> KerbHub:
@@ -101,11 +112,16 @@ def source_for(call: ServiceCall, default: str | None = None) -> str:
 	return "automation:" + (call.context.parent_id or call.context.id)
 
 
-def check_access(hub: KerbHub, call: ServiceCall, pin: str | None) -> None:
-	"""Automations and the owner context have no user and are trusted. Users must be guardians."""
+def check_access(hub: KerbHub, call: ServiceCall, check_pin: bool = True) -> None:
+	"""Automations and the owner context have no user and are trusted. Users must be guardians.
+
+	A PIN, when set, must come in the call or have been entered on the PIN
+	entity within the arming window. Confirming a manual step needs no PIN.
+	"""
 	user_id = call.context.user_id
+	pin = call.data.get(ATTR_PIN) or None
 	try:
-		authorise(hub.household, user_id, pin, trusted=user_id is None)
+		hub.authorise(user_id, pin, check_pin=check_pin)
 	except NotAGuardian as err:
 		_LOGGER.warning("Kerb refused %s from user %s: not a guardian", call.service, user_id)
 		raise Unauthorized(context=call.context, permission="kerb.guardian") from err
@@ -150,7 +166,7 @@ def register_services(hass: HomeAssistant) -> None:
 
 	async def handle_lock(call: ServiceCall) -> ServiceResponse:
 		hub = get_hub(hass)
-		check_access(hub, call, call.data.get(ATTR_PIN))
+		check_access(hub, call)
 		child_id = resolve_child(hub, call)
 		duration: timedelta | None = call.data.get(ATTR_DURATION)
 		minutes = int(duration.total_seconds() // 60) if duration else None
@@ -167,7 +183,7 @@ def register_services(hass: HomeAssistant) -> None:
 
 	async def handle_unlock(call: ServiceCall) -> ServiceResponse:
 		hub = get_hub(hass)
-		check_access(hub, call, call.data.get(ATTR_PIN))
+		check_access(hub, call)
 		child_id = resolve_child(hub, call)
 		override = await hub.controller.unlock(
 			child_id,
@@ -180,7 +196,7 @@ def register_services(hass: HomeAssistant) -> None:
 
 	async def handle_grant(call: ServiceCall) -> ServiceResponse:
 		hub = get_hub(hass)
-		check_access(hub, call, call.data.get(ATTR_PIN))
+		check_access(hub, call)
 		child_id = resolve_child(hub, call)
 		try:
 			override = await hub.controller.grant(
@@ -198,7 +214,7 @@ def register_services(hass: HomeAssistant) -> None:
 
 	async def handle_allowance(call: ServiceCall) -> ServiceResponse:
 		hub = get_hub(hass)
-		check_access(hub, call, call.data.get(ATTR_PIN))
+		check_access(hub, call)
 		child_id = resolve_child(hub, call)
 		override = await hub.controller.set_allowance_today(child_id, call.data[ATTR_MINUTES], source=source_for(call))
 		await hub.async_refresh()
@@ -211,7 +227,7 @@ def register_services(hass: HomeAssistant) -> None:
 
 	async def handle_confirm_manual(call: ServiceCall) -> None:
 		hub = get_hub(hass)
-		check_access(hub, call, None)
+		check_access(hub, call, check_pin=False)
 		child_id = resolve_child(hub, call)
 		device_id = hub.device_id_for(child_id, call.data[ATTR_DEVICE])
 		if device_id is None or device_id not in hub.manual:

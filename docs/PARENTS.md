@@ -20,7 +20,7 @@ Settings, Devices and services, Add integration, Kerb.
 
 1. Name and age band. No date of birth is stored.
 2. Devices. For each one: a name, the platform, the network switch or switches, the plug, the entity to turn off gracefully, whether Kerb may cut power, an in-use entity, and whether this device is manual. Tick "add another" to keep going.
-3. Guardians and PIN. Pick the Home Assistant users who may lock, unlock and grant. Everyone else is refused. The PIN is optional and applies to everyone, including guardians, so a child who finds the dashboard still cannot unlock themselves.
+3. Guardians and PIN. Pick the Home Assistant users who may lock, unlock and grant. Everyone else is refused. The PIN is optional and applies to everyone, including guardians, so a child who finds the dashboard still cannot unlock themselves. With a PIN set, a guardian types it into the PIN entity first. That arms the dashboard for five minutes.
 
 Then open the integration's Configure page for the weekly allowance, bedtime, a cap on daily grants, and how long Kerb waits for an enforcer to confirm.
 
@@ -37,11 +37,12 @@ Every child becomes a device in Home Assistant with these entities.
 | Remaining today (minutes) | Allowance plus grants minus what was used. The confidence attribute says confirmed, assumed or stale. |
 | Used today (minutes) | Weighted usage. The attribute lists devices that cannot report which app was used. |
 | Status | free, locked, exhausted, bedtime or unknown. |
-| Enforcement | confirmed, partial, degraded or unknown. This is the one to watch. |
+| Enforcement | confirmed, pending, partial, degraded or unknown. Pending means the writes went out and Kerb is waiting for a read-back or for you to press done. This is the one to watch. |
 | Allowance today (number) | Replace today's allowance without changing the weekly rule. |
 | Grant 15, 30, 60 minutes (buttons) | One tap. |
-| PS5 manual done (button) | Press after you have done the manual step in the vendor app. |
-| Any enforcer degraded (binary sensor) | On when something is not confirmed or a switch has gone missing. Use it for alerts. |
+| PS5 manual done (button) | Press after you have done the manual step in the vendor app. Never needs the PIN. |
+| PIN (text) | Only matters when a PIN is set. Type the PIN here and the switches, buttons and number work for you for five minutes. The field clears itself and the PIN is never stored. |
+| Any enforcer degraded (binary sensor) | On when a lock failed, only partly landed, or a switch has gone missing. Not on while a manual step is simply waiting for you. Use it for alerts. |
 
 Unknown means unknown. If the router switch disappears, Kerb will not guess that the child is free or locked. It shows unknown, raises a repair issue, and keeps the lock request on record.
 
@@ -92,7 +93,7 @@ Home Assistant cannot hide entities from one user and show them to another. Thre
 
 1. Children should not have Home Assistant logins. Give them a view-only kiosk dashboard fed by the sensors if they want to see their remaining time.
 2. Lock, unlock and grant refuse writes from users who are not guardians.
-3. Set a PIN. Then even a guardian's open dashboard needs the PIN for the lock switch.
+3. Set a PIN. Then even a guardian's open dashboard refuses the lock switch, the grant buttons and the allowance number until the guardian types the PIN into the PIN entity. The dashboard stays armed for that guardian for five minutes, then asks again. Service calls can carry the PIN in the `pin` field instead. The manual done button never needs it. Automations never need it.
 
 ## What Kerb stores
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import timedelta
+from datetime import datetime, timedelta
 import logging
 from typing import Any
 
@@ -47,10 +47,12 @@ from .const import (
 	DEFAULT_RETENTION_DAYS,
 	DOMAIN,
 	EVENT_TYPE,
+	PIN_ARM_SECONDS,
 	STORAGE_KEY,
 	STORAGE_VERSION,
 	TICK_SECONDS,
 )
+from .core.auth import authorise, verify_pin
 from .core.controller import ChildState, Controller
 from .core.models import AgeBand, Child, Device, Event, Household, Platform, Policy, TimeWindow
 from .enforcers import ManualEnforcer, NetworkEnforcer, PowerEnforcer, PresenceObserver
@@ -86,6 +88,7 @@ class KerbHub:
 		self.coordinators: dict[str, KerbChildCoordinator] = {}
 		self.manual: dict[str, ManualEnforcer] = {}
 		self.pins: dict[str, str | None] = {}
+		self.armed: dict[str, datetime] = {}
 		self._unsub_timer: Callable[[], None] | None = None
 		self._unsub_events: Callable[[], None] | None = None
 		self._loaded = False
@@ -141,6 +144,39 @@ class KerbHub:
 
 	def _refresh_pin(self) -> None:
 		self.household.pin_hash = next((pin for pin in self.pins.values() if pin), None)
+
+	# Access
+
+	def authorise(self, user_id: str | None, pin: str | None = None, check_pin: bool = True) -> None:
+		"""The guardian check and PIN for any write.
+
+		A call with no user is an automation or the owner context and is
+		trusted. A guardian who entered the PIN on the dashboard within the
+		arming window does not have to send it again.
+		"""
+		if pin is None and user_id is not None and self.is_armed(user_id):
+			check_pin = False
+		authorise(self.household, user_id, pin, trusted=user_id is None, check_pin=check_pin)
+
+	def arm(self, user_id: str, pin: str) -> bool:
+		"""Check the PIN once and arm the dashboard for this guardian. Never stores the PIN."""
+		if not verify_pin(self.household.pin_hash, pin):
+			self.armed.pop(user_id, None)
+			return False
+		self.armed[user_id] = dt_util.utcnow() + timedelta(seconds=PIN_ARM_SECONDS)
+		return True
+
+	def is_armed(self, user_id: str) -> bool:
+		until = self.armed.get(user_id)
+		if until is None:
+			return False
+		if until <= dt_util.utcnow():
+			self.armed.pop(user_id, None)
+			return False
+		return True
+
+	def armed_until(self, user_id: str) -> datetime | None:
+		return self.armed.get(user_id) if self.is_armed(user_id) else None
 
 	def _add_device(self, child_id: str, spec: dict[str, Any], window: int) -> None:
 		device = Device(

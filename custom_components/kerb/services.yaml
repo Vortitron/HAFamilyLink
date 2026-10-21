@@ -123,3 +123,8 @@ confirm_manual:
       example: PS5
       selector:
         text:
+    pin:
+      required: false
+      selector:
+        text:
+          type: password

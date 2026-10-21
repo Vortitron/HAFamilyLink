@@ -33,23 +33,14 @@ blueprint:
       default: "lock button"
       selector:
         text:
-    pin:
-      name: PIN
-      description: Only if a PIN is set. Leave blank otherwise.
-      default: ""
-      selector:
-        text:
-          type: password
 mode: queued
 triggers:
   - trigger: state
     entity_id: !input trigger_entity
 actions:
-  - variables:
-      pin: !input pin
+  # Automations run with no user and are trusted, so no PIN is needed here.
   - action: kerb.lock
     data:
       child: !input child
       duration: !input duration
       reason: !input reason
-      pin: "{{ pin if pin else none }}"

@@ -41,15 +41,17 @@ def verify_pin(pin_hash: str | None, pin: str | None) -> bool:
 	return hmac.compare_digest(hash_pin(pin, salt), pin_hash)
 
 
-def authorise(household: Household, user_id: str | None, pin: str | None, trusted: bool = False) -> None:
+def authorise(household: Household, user_id: str | None, pin: str | None, trusted: bool = False, check_pin: bool = True) -> None:
 	"""Raise unless the caller may lock, unlock or grant.
 
 	``trusted`` is for automations and the host's own owner context. A call
 	with no user and not trusted is refused. The PIN is checked whenever one is
-	set, even for guardians.
+	set, even for guardians, unless ``check_pin`` is False: the host turns it
+	off for a caller who has just entered the PIN, and for confirmations that
+	decide nothing (a parent saying the manual step is done).
 	"""
 	if not trusted:
 		if user_id is None or user_id not in household.guardians:
 			raise NotAGuardian("only a guardian may do that")
-	if not verify_pin(household.pin_hash, pin):
+	if check_pin and not verify_pin(household.pin_hash, pin):
 		raise BadPin("PIN missing or wrong")

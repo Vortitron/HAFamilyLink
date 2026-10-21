@@ -55,6 +55,8 @@ DEFAULT_LOW_THRESHOLD = 15
 DEFAULT_RETENTION_DAYS = 31
 DEFAULT_POWER_DELAY = 20
 TICK_SECONDS = 60
+# How long the dashboard stays armed for a guardian after they enter the PIN.
+PIN_ARM_SECONDS = 300
 
 # Services.
 SERVICE_LOCK = "lock"

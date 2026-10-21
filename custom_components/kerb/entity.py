@@ -8,7 +8,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
-from .core.auth import BadPin, NotAGuardian, authorise
+from .core.auth import BadPin, NotAGuardian
 from .hub import KerbChildCoordinator
 
 
@@ -31,12 +31,18 @@ class KerbChildEntity(CoordinatorEntity[KerbChildCoordinator]):
 	def state_data(self):
 		return self.coordinator.data
 
-	def guard(self, pin: str | None = None) -> None:
-		"""Refuse writes from HA users who are not guardians. No user means an automation, which is trusted."""
+	def guard(self, check_pin: bool = True) -> None:
+		"""Refuse writes from HA users who are not guardians. No user means an automation, which is trusted.
+
+		Entities cannot carry a PIN, so when one is set a guardian first
+		enters it on the PIN entity, which arms the dashboard for a few
+		minutes. ``check_pin`` is False for a done button: confirming a manual
+		step decides nothing.
+		"""
 		context: Context | None = self._context
 		user_id = context.user_id if context else None
 		try:
-			authorise(self.coordinator.hub.household, user_id, pin, trusted=user_id is None)
+			self.coordinator.hub.authorise(user_id, check_pin=check_pin)
 		except NotAGuardian as err:
 			raise Unauthorized(context=context, permission="kerb.guardian") from err
 		except BadPin as err:
