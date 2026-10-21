@@ -5,10 +5,11 @@
     "at": "2026-10-21T20:05:00Z"
   },
   "lists": "css",
-  "title": "Handrail: parents in control, one app for every screen",
+  "title": "Handrail: parents in control, from the first tablet to independence",
   "order": [
     "cover",
     "vision",
+    "grows",
     "today",
     "solution",
     "ban-leaks",
@@ -18,8 +19,10 @@
     "sweden-remiss",
     "floor-path",
     "household-plan",
+    "content",
     "read-back",
     "stays-home",
+    "voluntary",
     "guide",
     "sweden-lead",
     "asks",
@@ -35,7 +38,7 @@
       "start": "today"
     },
     "ban": {
-      "description": "What a ban does: it leaks, parents make the holes, and a borrowed account loses every teen protection.",
+      "description": "If there is a ban Handrail complies, but a ban alone leaks, parents make the holes, and a borrowed account loses every teen protection.",
       "start": "ban-leaks"
     },
     "sweden": {
@@ -43,7 +46,7 @@
       "start": "sweden-now"
     },
     "proposal": {
-      "description": "The floor and the path, the household plan, honest read-back, what stays home, and an optional guide.",
+      "description": "The floor and the path, the household plan, what it can block and what stays open, honest read-back, what stays home, who installs it, and an optional guide.",
       "start": "floor-path"
     },
     "asks": {

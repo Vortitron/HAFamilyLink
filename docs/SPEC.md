@@ -505,6 +505,7 @@ The repo should be renamed to kerb (or the chosen alternative). hacs.json is rew
 9. Licence for the data. ODbL as proposed, or CC BY-SA to match the vocabulary.
 10. Whether to publish the spec to the HA community forum and the X-PPC and PARCEP authors once 0.1 has a working Phase 1, so it can feed those drafts rather than compete with them.
 11. PlayStation. Accept the manual enforcer as the long-term answer, or fund a mitmproxy spike on the PlayStation Family app knowing the account ban risk.
+12. **The protected list.** The standard fixes a short list no plan may block: emergency numbers, children’s helplines, public health advice, how to report abuse, children’s rights. Decide whether sexual and reproductive health information for older children joins it, and who maintains the list (proposal section 4.2a).
 
 ## 12. Deliberately out of scope
 
