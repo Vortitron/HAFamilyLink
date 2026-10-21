@@ -801,8 +801,30 @@ class Controller:
 			self.ledgers[(ledger.child_id, ledger.date)] = ledger
 		self._announced = {tuple(key) for key in data.get("announced", [])}  # type: ignore[misc]
 
+	def forget_child(self, child_id: str) -> None:
+		"""The delete_child verb (SPEC.md 4.2 and 8): remove every record Kerb holds about one child."""
+		self.children.pop(child_id, None)
+		self.policies.pop(child_id, None)
+		for device in list(self.devices_for(child_id)):
+			self.devices.pop(device.id, None)
+			self._now_playing.pop(device.id, None)
+			self.states = {key: state for key, state in self.states.items() if key[1] != device.id}
+		self.overrides = [override for override in self.overrides if override.child_id != child_id]
+		self.ledgers = {key: ledger for key, ledger in self.ledgers.items() if key[0] != child_id}
+		self._announced = {key for key in self._announced if key[0] != child_id}
+
+	@staticmethod
+	def without_child(data: dict[str, Any], child_id: str) -> dict[str, Any]:
+		"""The same removal applied to a stored document, for when no controller is running."""
+		return {
+			**data,
+			"overrides": [item for item in data.get("overrides", []) if item.get("child_id") != child_id],
+			"ledgers": [item for item in data.get("ledgers", []) if item.get("child_id") != child_id],
+			"announced": [key for key in data.get("announced", []) if key and key[0] != child_id],
+		}
+
 	def prune(self) -> None:
-		"""Drop ledgers and overrides older than the retention period."""
+		"""Drop ledgers and overrides older than the retention period. Nothing is summarised first."""
 		cutoff = (self.now() - timedelta(days=self.household.usage_retention_days)).date().isoformat()
 		self.ledgers = {key: ledger for key, ledger in self.ledgers.items() if ledger.date >= cutoff}
 		self.overrides = [override for override in self.overrides if override.expires_at.date().isoformat() >= cutoff]

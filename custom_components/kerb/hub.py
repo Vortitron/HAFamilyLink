@@ -129,6 +129,7 @@ class KerbHub:
 		return coordinator
 
 	def remove_entry(self, entry: KerbConfigEntry) -> None:
+		"""Unload a child. Ledgers and overrides stay: this also runs on a reload. See ``async_forget_child``."""
 		child_id = entry.data[CONF_CHILD_ID]
 		self.coordinators.pop(entry.entry_id, None)
 		self.pins.pop(entry.entry_id, None)
@@ -141,6 +142,11 @@ class KerbHub:
 				if not any(name in other.enforcer_ids for other in self.controller.devices.values()):
 					self.controller.enforcers.pop(name, None)
 					self.manual.pop(name, None)
+
+	async def async_forget_child(self, child_id: str) -> None:
+		"""The entry was deleted: drop everything stored about the child and save now."""
+		self.controller.forget_child(child_id)
+		await self.store.async_save(self.controller.to_dict())
 
 	def _refresh_pin(self) -> None:
 		self.household.pin_hash = next((pin for pin in self.pins.values() if pin), None)

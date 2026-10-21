@@ -15,6 +15,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError, Unauthorized
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.typing import ConfigType
 import voluptuous as vol
 
@@ -28,6 +29,7 @@ from .const import (
 	ATTR_REASON,
 	ATTR_SCOPE,
 	ATTR_SOURCE,
+	CONF_CHILD_ID,
 	DOMAIN,
 	SERVICE_CONFIRM_MANUAL,
 	SERVICE_GRANT,
@@ -35,8 +37,11 @@ from .const import (
 	SERVICE_RECONCILE,
 	SERVICE_SET_ALLOWANCE_TODAY,
 	SERVICE_UNLOCK,
+	STORAGE_KEY,
+	STORAGE_VERSION,
 )
 from .core.auth import BadPin, NotAGuardian
+from .core.controller import Controller
 from .core.ledger import GrantCapExceeded
 from .core.models import Override, Scope
 from .hub import KerbConfigEntry, KerbHub
@@ -281,6 +286,20 @@ async def async_unload_entry(hass: HomeAssistant, entry: KerbConfigEntry) -> boo
 			await hub.async_unload()
 			hass.data.pop(DOMAIN, None)
 	return unloaded
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: KerbConfigEntry) -> None:
+	"""The child was deleted, not just unloaded: forget their ledgers and overrides."""
+	child_id = entry.data[CONF_CHILD_ID]
+	hub: KerbHub | None = hass.data.get(DOMAIN)
+	if hub is not None:
+		await hub.async_forget_child(child_id)
+		return
+	# This was the last child, so the hub is gone. Edit the stored document directly.
+	store: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, STORAGE_KEY)
+	data = await store.async_load()
+	if data:
+		await store.async_save(Controller.without_child(data, child_id))
 
 
 def entry_summary(entry: KerbConfigEntry) -> dict[str, Any]:

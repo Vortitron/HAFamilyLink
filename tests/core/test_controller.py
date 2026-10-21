@@ -495,3 +495,26 @@ async def test_grant_lifts_exhaustion_but_not_a_parents_lock(controller: Control
 	state = controller.child_state(alice.id)
 	assert state.status == ChildStatus.LOCKED and state.lock_id == parent.id
 	assert state.remaining == 29
+
+
+async def test_forget_child_drops_every_record(controller: Controller, alice, clock: Clock) -> None:
+	from kerb_core.models import AgeBand, Child
+
+	bob = Child(display_name="Bob", age_band=AgeBand.SEVEN_TO_12)
+	controller.add_child(bob)
+	unifi = FakeEnforcer("unifi", Mode.NETWORK, in_use=True)
+	add_device(controller, "PS5", alice.id, unifi)
+	add_device(controller, "Tablet", bob.id, unifi)
+	await controller.tick()
+	clock.advance(minutes=2)
+	await controller.tick()
+	await controller.lock(alice.id, minutes=30)
+	await controller.lock(bob.id, minutes=30)
+	before = controller.to_dict()
+	controller.forget_child(alice.id)
+	assert alice.id not in controller.children and alice.id not in controller.policies
+	assert controller.devices_for(alice.id) == []
+	assert {override.child_id for override in controller.overrides} == {bob.id}
+	assert {key[0] for key in controller.ledgers} == {bob.id}
+	assert controller.to_dict() == Controller.without_child(before, alice.id)
+	assert controller.child_state(bob.id).status == ChildStatus.LOCKED
