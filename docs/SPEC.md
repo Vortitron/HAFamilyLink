@@ -450,9 +450,10 @@ Steam IParentalService auth path. TimeLimit server adapter. OpenWrt ubus enforce
 The Vortitron/HAFamilyLink placeholder is repurposed. The Family Link README is replaced, the stub Python under custom_components/familylink is removed, and the layout becomes:
 
 ```text
-docs/           spec, platform matrix, schemas
-kerb_core/      pure Python domain with tests, no HA imports
-custom_components/kerb/
+docs/                         spec, platform matrix, schemas
+custom_components/kerb/       the HA integration
+custom_components/kerb/core/  pure Python domain, no HA imports (lives here so a HACS install carries it)
+kerb_core/                    shim so the core imports as kerb_core from a checkout, until it is on PyPI
 blueprints/
 tests/
 ```

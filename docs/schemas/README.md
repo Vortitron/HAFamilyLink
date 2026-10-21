@@ -26,4 +26,4 @@ Rules shared by every schema:
 | tag_vote.json | Tag vote (community) |
 | profile.json | Profile (community) |
 
-The example in examples/override_lock.json validates against override.json.
+The example in examples/override_lock.json validates against override.json. tests/test_schemas.py checks every schema, the examples and the output of every core model.
