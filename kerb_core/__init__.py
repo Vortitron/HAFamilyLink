@@ -1,13 +1,16 @@
-"""Kerb core: the household screen-time domain, with no Home Assistant imports.
+"""Kerb core, importable as ``kerb_core`` without Home Assistant.
 
-The package implements SPEC.md sections 3 to 5: the data model, policy
-evaluation, override stacking, the ledger, the enforcer interface and the
-controller that composes them. Everything here is pure Python so it can be
-tested without a running host and reused by a controller other than Home
-Assistant.
+The code lives in custom_components/kerb/core so that a HACS install, which
+copies only that folder, carries it. This shim points the package path there
+so ``import kerb_core.controller`` works from a checkout, and so the core can
+later be published on PyPI under this name without changing any import.
 """
 
-from .models import (
+from pathlib import Path
+
+__path__ = [str(Path(__file__).resolve().parent.parent / "custom_components" / "kerb" / "core")]
+
+from .models import (  # noqa: E402
 	AgeBand,
 	Capabilities,
 	Child,

@@ -1,0 +1,125 @@
+lock:
+  fields:
+    child:
+      required: true
+      example: Alice
+      selector:
+        text:
+    duration:
+      required: false
+      example: "01:00:00"
+      selector:
+        duration:
+    scope:
+      required: false
+      default: all
+      example: PS5
+      selector:
+        text:
+    mode:
+      required: false
+      default: auto
+      selector:
+        select:
+          options:
+            - auto
+            - pause
+            - zero_allowance
+            - network
+            - power
+            - manual
+          translation_key: mode
+    reason:
+      required: false
+      example: dinner
+      selector:
+        text:
+    pin:
+      required: false
+      selector:
+        text:
+          type: password
+unlock:
+  fields:
+    child:
+      required: true
+      example: Alice
+      selector:
+        text:
+    scope:
+      required: false
+      default: all
+      selector:
+        text:
+    reason:
+      required: false
+      selector:
+        text:
+    pin:
+      required: false
+      selector:
+        text:
+          type: password
+grant:
+  fields:
+    child:
+      required: true
+      example: Alice
+      selector:
+        text:
+    minutes:
+      required: true
+      example: 20
+      selector:
+        number:
+          min: 1
+          max: 1440
+          unit_of_measurement: min
+    reason:
+      required: false
+      example: emptied the dishwasher
+      selector:
+        text:
+    source:
+      required: false
+      example: taskmate
+      selector:
+        text:
+    pin:
+      required: false
+      selector:
+        text:
+          type: password
+set_allowance_today:
+  fields:
+    child:
+      required: true
+      example: Alice
+      selector:
+        text:
+    minutes:
+      required: true
+      example: 90
+      selector:
+        number:
+          min: 0
+          max: 1440
+          unit_of_measurement: min
+    pin:
+      required: false
+      selector:
+        text:
+          type: password
+reconcile:
+confirm_manual:
+  fields:
+    child:
+      required: true
+      example: Alice
+      selector:
+        text:
+    device:
+      required: true
+      example: PS5
+      selector:
+        text:

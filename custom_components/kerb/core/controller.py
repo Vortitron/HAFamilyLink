@@ -121,11 +121,19 @@ class Controller:
 
 	def add_child(self, child: Child, policy: Policy | None = None) -> None:
 		self.children[child.id] = child
-		self.policies[child.id] = policy or Policy(child_id=child.id)
+		self.set_policy(child.id, policy or Policy(child_id=child.id))
 		child.policy_id = self.policies[child.id].id
 
 	def set_policy(self, child_id: str, policy: Policy) -> None:
+		"""Replace the standing rules. Today's allowance follows unless a parent set it by hand."""
 		self.policies[child_id] = policy
+		now = self.now()
+		ledger = self.ledgers.get((child_id, now.date().isoformat()))
+		if ledger is None:
+			return
+		entries = [entry for entry in ledger.entries if entry.kind == "allowance"]
+		if entries and entries[-1].source == "policy" and entries[-1].minutes != pol.allowance_for(policy, now.date()):
+			ledger.add_allowance(pol.allowance_for(policy, now.date()), now, "policy")
 
 	def add_device(self, device: Device) -> None:
 		self.devices[device.id] = device
@@ -605,9 +613,11 @@ class Controller:
 		policy = self.policies[child_id]
 		devices = self.devices_for(child_id)
 		bound = {name for device in devices for name in device.enforcer_ids if name in self.enforcers}
-		untrusted = sorted(name for name in bound if not self._trusted(name))
+		# Only enforcers that can actually stop a device decide whether the lock state is known.
+		enforcing = {name for name in bound if self.enforcers[name].capabilities.lock_mode is not None}
+		untrusted = sorted(name for name in enforcing if not self._trusted(name))
 		degraded = sorted(
-			name for name in bound if self.health.get(name, Health(HealthStatus.UNKNOWN)).status == HealthStatus.DEGRADED
+			name for name in enforcing if self.health.get(name, Health(HealthStatus.UNKNOWN)).status == HealthStatus.DEGRADED
 		)
 		lock = ov.effective_lock(self.child_overrides(child_id), now)
 

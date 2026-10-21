@@ -1,0 +1,210 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add a child",
+        "description": "Kerb models what you want, not what any vendor offers. Start with the child. No date of birth is stored, only an age band.",
+        "data": {
+          "name": "Name",
+          "age_band": "Age band"
+        }
+      },
+      "device": {
+        "title": "Add a device for {child}",
+        "description": "Pick the existing Home Assistant entities that can stop this device. Network blocking is the recommended default. Power is blunt and must be opted in. Manual means you act in the vendor app and press done. Devices added so far: {count}.",
+        "data": {
+          "name": "Device name",
+          "platform": "Platform",
+          "network_switches": "Switches that block this device on the network",
+          "network_inverted": "These switches mean allowed, not blocked",
+          "power_switch": "Smart plug that powers this device",
+          "graceful_off": "Entity to turn off before cutting power",
+          "power_opt_in": "Allow Kerb to cut power to this device",
+          "power_delay_s": "Seconds between graceful off and power cut",
+          "in_use_entity": "Entity that is on, playing or home while the device is in use",
+          "manual": "Manual: ask me to act in the vendor app and wait for done",
+          "add_another": "Add another device after this one"
+        }
+      },
+      "guardians": {
+        "title": "Guardians and PIN",
+        "description": "Only guardians may lock, unlock and grant from the dashboard. Automations are trusted. The PIN is optional and applies to everyone.",
+        "data": {
+          "guardians": "Guardians",
+          "pin": "PIN"
+        }
+      }
+    },
+    "error": {
+      "empty_name": "Please enter a name.",
+      "duplicate_name": "A child with that name already exists.",
+      "no_enforcer": "Pick at least one network switch or power switch, or tick manual."
+    },
+    "abort": {
+      "already_configured": "This child is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Allowance and bedtime",
+        "description": "Daily allowance in minutes per weekday, an optional bedtime (the same every day for now), and how Kerb behaves.",
+        "data": {
+          "allowance_mon": "Monday",
+          "allowance_tue": "Tuesday",
+          "allowance_wed": "Wednesday",
+          "allowance_thu": "Thursday",
+          "allowance_fri": "Friday",
+          "allowance_sat": "Saturday",
+          "allowance_sun": "Sunday",
+          "bedtime_start": "Bedtime starts",
+          "bedtime_end": "Bedtime ends",
+          "grant_cap_minutes_per_day": "Cap on ad hoc grants per day (0 for none)",
+          "confirmation_window_s": "Confirmation window",
+          "low_threshold_minutes": "Warn when remaining time drops to",
+          "usage_retention_days": "Keep daily ledgers for"
+        }
+      }
+    }
+  },
+  "selector": {
+    "age_band": {
+      "options": {
+        "under_7": "Under 7",
+        "7_to_12": "7 to 12",
+        "13_to_15": "13 to 15",
+        "16_plus": "16 and over"
+      }
+    },
+    "platform": {
+      "options": {
+        "android": "Android",
+        "windows": "Windows",
+        "xbox": "Xbox",
+        "playstation": "PlayStation",
+        "switch": "Nintendo Switch",
+        "ios": "iPhone or iPad",
+        "tv": "TV",
+        "pc": "PC",
+        "other": "Other"
+      }
+    },
+    "mode": {
+      "options": {
+        "auto": "Auto: strongest available per device",
+        "pause": "Vendor pause",
+        "zero_allowance": "Zero today's vendor allowance",
+        "network": "Network block",
+        "power": "Power off",
+        "manual": "Manual"
+      }
+    }
+  },
+  "entity": {
+    "switch": {
+      "lock": { "name": "Lock" },
+      "device_lock": { "name": "{device} lock" }
+    },
+    "sensor": {
+      "remaining_today": { "name": "Remaining today" },
+      "used_today": { "name": "Used today" },
+      "status": {
+        "name": "Status",
+        "state": {
+          "free": "Free",
+          "locked": "Locked",
+          "exhausted": "Time used up",
+          "bedtime": "Bedtime",
+          "unknown": "Unknown"
+        }
+      },
+      "enforcement": {
+        "name": "Enforcement",
+        "state": {
+          "confirmed": "Confirmed",
+          "partial": "Partial",
+          "degraded": "Degraded",
+          "unknown": "Unknown"
+        }
+      }
+    },
+    "number": {
+      "allowance_today": { "name": "Allowance today" }
+    },
+    "button": {
+      "grant": { "name": "Grant {minutes} minutes" },
+      "manual_done": { "name": "{device} manual done" }
+    },
+    "binary_sensor": {
+      "enforcer_degraded": { "name": "Any enforcer degraded" }
+    }
+  },
+  "services": {
+    "lock": {
+      "name": "Lock",
+      "description": "No screens. Creates a lock for a child that expires after the duration, or at the end of the day.",
+      "fields": {
+        "child": { "name": "Child", "description": "The child's name as configured." },
+        "duration": { "name": "Duration", "description": "How long the lock lasts. End of day if omitted." },
+        "scope": { "name": "Scope", "description": "all, or the name of one device." },
+        "mode": { "name": "Mode", "description": "auto picks the strongest available action per device." },
+        "reason": { "name": "Reason", "description": "Shown on the dashboard and kept in the ledger." },
+        "pin": { "name": "PIN", "description": "Required if a PIN is set." }
+      }
+    },
+    "unlock": {
+      "name": "Unlock",
+      "description": "Lifts the locks in force for a child.",
+      "fields": {
+        "child": { "name": "Child", "description": "The child's name as configured." },
+        "scope": { "name": "Scope", "description": "all, or the name of one device." },
+        "reason": { "name": "Reason", "description": "Kept in the ledger." },
+        "pin": { "name": "PIN", "description": "Required if a PIN is set." }
+      }
+    },
+    "grant": {
+      "name": "Grant minutes",
+      "description": "Adds minutes to today's remaining time. The hook for chores.",
+      "fields": {
+        "child": { "name": "Child", "description": "The child's name as configured." },
+        "minutes": { "name": "Minutes", "description": "Minutes to add today." },
+        "reason": { "name": "Reason", "description": "What earned it." },
+        "source": { "name": "Source", "description": "Which integration or automation granted it." },
+        "pin": { "name": "PIN", "description": "Required if a PIN is set." }
+      }
+    },
+    "set_allowance_today": {
+      "name": "Set allowance today",
+      "description": "Replaces today's base allowance without changing the weekly policy.",
+      "fields": {
+        "child": { "name": "Child", "description": "The child's name as configured." },
+        "minutes": { "name": "Minutes", "description": "Today's allowance." },
+        "pin": { "name": "PIN", "description": "Required if a PIN is set." }
+      }
+    },
+    "reconcile": {
+      "name": "Reconcile",
+      "description": "Forces a read-back from every enforcer."
+    },
+    "confirm_manual": {
+      "name": "Confirm manual action",
+      "description": "Tells Kerb a parent has done the requested action in the vendor app.",
+      "fields": {
+        "child": { "name": "Child", "description": "The child's name as configured." },
+        "device": { "name": "Device", "description": "The manual device's name." }
+      }
+    }
+  },
+  "exceptions": {
+    "bad_pin": { "message": "PIN missing or wrong." },
+    "unknown_child": { "message": "No child called {child} is configured." },
+    "unknown_device": { "message": "No device called {device} is configured for that child." },
+    "grant_cap": { "message": "{detail}" }
+  },
+  "issues": {
+    "enforcer_degraded": {
+      "title": "Kerb cannot trust {enforcer}",
+      "description": "The enforcer {enforcer} is {status}: {reason}. Until it recovers the affected child shows as unknown, never as unlocked."
+    }
+  }
+}

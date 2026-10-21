@@ -12,7 +12,7 @@ testpaths = ["tests"]
 addopts = "-p no:cacheprovider"
 
 [tool.coverage.run]
-source = ["kerb_core", "custom_components/kerb"]
+source = ["custom_components/kerb"]
 
 [tool.ruff]
 line-length = 130

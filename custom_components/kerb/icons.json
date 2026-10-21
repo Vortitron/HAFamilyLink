@@ -1,0 +1,10 @@
+{
+  "services": {
+    "lock": { "service": "mdi:lock-clock" },
+    "unlock": { "service": "mdi:lock-open-variant" },
+    "grant": { "service": "mdi:plus-circle-outline" },
+    "set_allowance_today": { "service": "mdi:calendar-clock" },
+    "reconcile": { "service": "mdi:refresh" },
+    "confirm_manual": { "service": "mdi:check-decagram" }
+  }
+}
