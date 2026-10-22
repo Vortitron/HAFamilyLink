@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kerb.dev/schema/0.1/override.json",
+  "title": "Override",
+  "description": "One parental decision with a lifetime. Idempotent on id, immutable once issued.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "child_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "lock",
+        "grant",
+        "unlock",
+        "allowance_today"
+      ]
+    },
+    "scope": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "all",
+            "device",
+            "app",
+            "tag"
+          ]
+        },
+        "device_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "app": {
+          "type": "string",
+          "pattern": "^(android|msstore|xbox|psn|nintendo|steam|igdb|apple|other):[^\\s]+$",
+          "description": "Namespaced app key, see SPEC.md section 3.9."
+        },
+        "tag": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{1,40}$"
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "device"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "device_id"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "app"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "app"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "tag"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "tag"
+            ]
+          }
+        }
+      ]
+    },
+    "minutes": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1440,
+      "description": "Required for grant and allowance_today. Not used on lock or unlock."
+    },
+    "reason": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "source": {
+      "type": "string",
+      "pattern": "^(guardian|automation|integration):.+$"
+    },
+    "starts_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}[Tt]\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?([Zz]|[+-]\\d{2}:\\d{2})$",
+      "description": "RFC 3339 with an explicit offset (Z or +hh:mm)."
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Required. Default is end of the local day. Must be later than starts_at; JSON Schema cannot express that, so it is a conformance rule (SPEC.md 4.1). RFC 3339 with an explicit offset (Z or +hh:mm).",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}[Tt]\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?([Zz]|[+-]\\d{2}:\\d{2})$"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "requested",
+        "applied",
+        "partial",
+        "confirmed",
+        "failed",
+        "expired",
+        "cancelled"
+      ]
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "$ref": "https://kerb.dev/schema/0.1/enforcer_result.json"
+      }
+    },
+    "cancels": {
+      "oneOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Set on a compensating record."
+    }
+  },
+  "required": [
+    "id",
+    "child_id",
+    "kind",
+    "scope",
+    "source",
+    "starts_at",
+    "expires_at",
+    "status"
+  ],
+  "patternProperties": {
+    "^x_": {}
+  },
+  "additionalProperties": true,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "grant",
+              "allowance_today"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "minutes"
+        ]
+      }
+    }
+  ]
+}

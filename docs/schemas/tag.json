@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kerb.dev/schema/0.1/tag.json",
+  "title": "Tag",
+  "description": "A curated vocabulary entry for the community layer.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{1,40}$"
+    },
+    "definition": {
+      "type": "string"
+    },
+    "polarity": {
+      "type": "string",
+      "enum": [
+        "value",
+        "neutral",
+        "caution"
+      ]
+    },
+    "synonyms": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "description": "Language code to list of synonyms."
+    },
+    "evidence_required": {
+      "type": "boolean",
+      "description": "True for caution tags."
+    },
+    "min_contributors": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1
+    }
+  },
+  "required": [
+    "id",
+    "definition",
+    "polarity"
+  ],
+  "patternProperties": {
+    "^x_": {}
+  },
+  "additionalProperties": true
+}

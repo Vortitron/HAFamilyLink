@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kerb.dev/schema/0.1/policy.json",
+  "title": "Policy",
+  "description": "Standing rules for one child. Per child, not per device.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "child_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "allowance_minutes": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 1440
+      },
+      "description": "Seven values, index 0 is Monday (ISO weekday 1)."
+    },
+    "windows": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {
+        "type": "array",
+        "maxItems": 4,
+        "items": {
+          "type": "object",
+          "required": [
+            "start",
+            "end"
+          ],
+          "properties": {
+            "start": {
+              "type": "string",
+              "pattern": "^([01][0-9]|2[0-3]):(00|30)$",
+              "description": "Local time, 30 minute granularity."
+            },
+            "end": {
+              "type": "string",
+              "pattern": "^([01][0-9]|2[0-3]):(00|30)$",
+              "description": "Local time, 30 minute granularity."
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "description": "Seven values, index 0 is Monday (ISO weekday 1). A window may cross midnight (start later than end). start equal to end is not allowed."
+    },
+    "bedtime": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "start",
+              "end"
+            ],
+            "properties": {
+              "start": {
+                "type": "string",
+                "pattern": "^([01][0-9]|2[0-3]):(00|30)$",
+                "description": "Local time, 30 minute granularity."
+              },
+              "end": {
+                "type": "string",
+                "pattern": "^([01][0-9]|2[0-3]):(00|30)$",
+                "description": "Local time, 30 minute granularity."
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "description": "Seven values, index 0 is Monday (ISO weekday 1)."
+    },
+    "rating_ceiling": {
+      "oneOf": [
+        {
+          "$ref": "https://kerb.dev/schema/0.1/rating_claim.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "app_rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "app",
+          "effect"
+        ],
+        "properties": {
+          "app": {
+            "type": "string",
+            "pattern": "^(android|msstore|xbox|psn|nintendo|steam|igdb|apple|other):[^\\s]+$",
+            "description": "Namespaced app key, see SPEC.md section 3.9."
+          },
+          "effect": {
+            "type": "string",
+            "enum": [
+              "allow_always",
+              "allow",
+              "count_half",
+              "count_double",
+              "require_approval",
+              "block"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "App key plus effect. A per-app rule beats any tag rule. Per-app daily limits are phase 3 and not in 0.1."
+    },
+    "tag_rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "tag",
+          "effect"
+        ],
+        "properties": {
+          "tag": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{1,40}$"
+          },
+          "effect": {
+            "type": "string",
+            "enum": [
+              "allow_always",
+              "allow",
+              "count_half",
+              "count_double",
+              "require_approval",
+              "block"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Tag id plus effect. Among several matching tags the strictest wins. Time-of-day tag windows are phase 3 and not in 0.1."
+    },
+    "grant_cap_minutes_per_day": {
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1440
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "profile_ref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Community profile this started from, with version. Optional."
+    }
+  },
+  "required": [
+    "id",
+    "child_id",
+    "allowance_minutes"
+  ],
+  "patternProperties": {
+    "^x_": {}
+  },
+  "additionalProperties": true
+}

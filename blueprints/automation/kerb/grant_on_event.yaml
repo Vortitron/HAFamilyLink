@@ -1,0 +1,55 @@
+blueprint:
+  name: "Kerb: grant minutes when something happens"
+  description: >
+    Twenty minutes for emptying the dishwasher. Fire from any event on the
+    bus, such as a chore integration marking a task done, and add minutes to
+    today's remaining time with a reason the child can read in the ledger.
+  domain: automation
+  source_url: https://github.com/Vortitron/HAFamilyLink/blob/main/blueprints/automation/kerb/grant_on_event.yaml
+  input:
+    event_type:
+      name: Event type
+      description: The event to listen for, for example taskmate_task_completed.
+      selector:
+        text:
+    event_data:
+      name: Event data filter
+      description: Optional key and value pairs the event must carry, as YAML.
+      default: {}
+      selector:
+        object:
+    child:
+      name: Child
+      selector:
+        text:
+    minutes:
+      name: Minutes to grant
+      default: 20
+      selector:
+        number:
+          min: 1
+          max: 240
+          unit_of_measurement: min
+    reason:
+      name: Reason
+      default: "chore done"
+      selector:
+        text:
+    source:
+      name: Source
+      description: The integration or automation that earned it, kept in the ledger.
+      default: "automation"
+      selector:
+        text:
+mode: queued
+triggers:
+  - trigger: event
+    event_type: !input event_type
+    event_data: !input event_data
+actions:
+  - action: kerb.grant
+    data:
+      child: !input child
+      minutes: !input minutes
+      reason: !input reason
+      source: !input source

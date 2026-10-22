@@ -1,0 +1,13 @@
+{
+  "domain": "kerb",
+  "name": "Kerb",
+  "codeowners": ["@Vortitron"],
+  "config_flow": true,
+  "dependencies": ["persistent_notification"],
+  "documentation": "https://github.com/Vortitron/HAFamilyLink",
+  "integration_type": "hub",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/Vortitron/HAFamilyLink/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

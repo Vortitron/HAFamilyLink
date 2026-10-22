@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kerb.dev/schema/0.1/device.json",
+  "title": "Device",
+  "description": "A thing a child uses. May have no vendor account and still be governed by a network or power enforcer.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "child_id": {
+      "oneOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Null for a shared household device."
+    },
+    "current_child_id": {
+      "oneOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Who is using a shared device now."
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "android",
+        "windows",
+        "xbox",
+        "playstation",
+        "switch",
+        "ios",
+        "tv",
+        "pc",
+        "other"
+      ]
+    },
+    "network": {
+      "type": "object",
+      "properties": {
+        "mac": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$"
+          }
+        },
+        "ip": {
+          "type": "string"
+        },
+        "hostname": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "enforcer_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "power_off_allowed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Parent opt-in for the power enforcer."
+    }
+  },
+  "required": [
+    "id",
+    "display_name",
+    "platform",
+    "enforcer_ids"
+  ],
+  "patternProperties": {
+    "^x_": {}
+  },
+  "additionalProperties": true
+}

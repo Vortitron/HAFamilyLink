@@ -1,0 +1,46 @@
+blueprint:
+  name: "Kerb: lock a child for a duration from any trigger"
+  description: >
+    No screens for a while. Fire this from a button, a voice command or a
+    schedule. The lock expires on its own and every device is released.
+  domain: automation
+  source_url: https://github.com/Vortitron/HAFamilyLink/blob/main/blueprints/automation/kerb/lock_for_duration.yaml
+  input:
+    trigger_entity:
+      name: Trigger entity
+      description: A button, input_button or switch whose press starts the lock.
+      selector:
+        entity:
+          domain:
+            - input_button
+            - button
+            - switch
+    child:
+      name: Child
+      description: The child's name exactly as configured in Kerb.
+      selector:
+        text:
+    duration:
+      name: Duration
+      default:
+        hours: 1
+        minutes: 0
+        seconds: 0
+      selector:
+        duration:
+    reason:
+      name: Reason
+      default: "lock button"
+      selector:
+        text:
+mode: queued
+triggers:
+  - trigger: state
+    entity_id: !input trigger_entity
+actions:
+  # Automations run with no user and are trusted, so no PIN is needed here.
+  - action: kerb.lock
+    data:
+      child: !input child
+      duration: !input duration
+      reason: !input reason

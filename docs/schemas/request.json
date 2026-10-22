@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kerb.dev/schema/0.1/request.json",
+  "title": "Request",
+  "description": "A child-initiated ask surfaced by a vendor.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "child_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "device_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "more_time",
+        "app_access"
+      ]
+    },
+    "minutes": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1440
+    },
+    "app": {
+      "type": "string",
+      "pattern": "^(android|msstore|xbox|psn|nintendo|steam|igdb|apple|other):[^\\s]+$",
+      "description": "Namespaced app key, see SPEC.md section 3.9."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}[Tt]\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?([Zz]|[+-]\\d{2}:\\d{2})$",
+      "description": "RFC 3339 with an explicit offset (Z or +hh:mm)."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "denied",
+        "expired"
+      ]
+    },
+    "decided_by": {
+      "type": "string",
+      "pattern": "^(guardian|automation|integration):.+$"
+    },
+    "enforcer": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "child_id",
+    "kind",
+    "created_at",
+    "status",
+    "enforcer"
+  ],
+  "patternProperties": {
+    "^x_": {}
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kerb.dev/schema/0.1/device_ref.json",
+  "title": "Device reference",
+  "description": "What the controller hands an enforcer about a device: enough to act on it, nothing about the child.",
+  "type": "object",
+  "properties": {
+    "device_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "android",
+        "windows",
+        "xbox",
+        "playstation",
+        "switch",
+        "ios",
+        "tv",
+        "pc",
+        "other"
+      ]
+    },
+    "power_off_allowed": {
+      "type": "boolean",
+      "default": false,
+      "description": "The parent's opt-in for cutting power. A power enforcer must refuse when false."
+    }
+  },
+  "required": [
+    "device_id"
+  ],
+  "patternProperties": {
+    "^x_": {}
+  },
+  "additionalProperties": true
+}

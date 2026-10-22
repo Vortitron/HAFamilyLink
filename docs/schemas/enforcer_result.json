@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kerb.dev/schema/0.1/enforcer_result.json",
+  "title": "Enforcer result",
+  "description": "One enforcer's answer for one device. An enforcer returns requested, applied, failed or unknown; only the controller writes confirmed, after its own read-back.",
+  "type": "object",
+  "properties": {
+    "enforcer": {
+      "type": "string"
+    },
+    "device_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "requested",
+        "applied",
+        "confirmed",
+        "failed",
+        "unknown"
+      ],
+      "description": "What the enforcer reports. The controller downgrades confirmed to applied and confirms by read-back."
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "pause",
+        "zero_allowance",
+        "network",
+        "power",
+        "manual",
+        "bonus",
+        "allowance"
+      ],
+      "description": "How it was done. bonus and allowance are for grant and allowance_today overrides."
+    },
+    "detail": {
+      "type": "string"
+    },
+    "confirmed_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}[Tt]\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?([Zz]|[+-]\\d{2}:\\d{2})$",
+      "description": "RFC 3339 with an explicit offset (Z or +hh:mm)."
+    },
+    "restore": {
+      "type": "object",
+      "description": "Snapshot an emulating enforcer needs to put state back."
+    }
+  },
+  "required": [
+    "enforcer",
+    "status"
+  ],
+  "patternProperties": {
+    "^x_": {}
+  },
+  "additionalProperties": true
+}

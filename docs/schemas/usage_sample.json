@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kerb.dev/schema/0.1/usage_sample.json",
+  "title": "Usage sample",
+  "description": "A fact reported by an enforcer. Retained for a limited period then summarised.",
+  "type": "object",
+  "properties": {
+    "child_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "device_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "app": {
+      "type": "string",
+      "pattern": "^(android|msstore|xbox|psn|nintendo|steam|igdb|apple|other):[^\\s]+$",
+      "description": "Namespaced app key, see SPEC.md section 3.9."
+    },
+    "start": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}[Tt]\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?([Zz]|[+-]\\d{2}:\\d{2})$",
+      "description": "RFC 3339 with an explicit offset (Z or +hh:mm)."
+    },
+    "end": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}[Tt]\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?([Zz]|[+-]\\d{2}:\\d{2})$",
+      "description": "RFC 3339 with an explicit offset (Z or +hh:mm)."
+    },
+    "seconds": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Must not exceed end minus start, and start must not be later than end. Conformance rules tested outside JSON Schema."
+    },
+    "enforcer": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}[Tt]\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?([Zz]|[+-]\\d{2}:\\d{2})$",
+      "description": "RFC 3339 with an explicit offset (Z or +hh:mm)."
+    }
+  },
+  "required": [
+    "child_id",
+    "device_id",
+    "start",
+    "end",
+    "seconds",
+    "enforcer",
+    "observed_at"
+  ],
+  "patternProperties": {
+    "^x_": {}
+  },
+  "additionalProperties": true
+}

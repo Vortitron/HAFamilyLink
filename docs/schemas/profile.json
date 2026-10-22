@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kerb.dev/schema/0.1/profile.json",
+  "title": "Profile",
+  "description": "A named, subscribable bundle of tag rules and defaults. Carries an age band, never a child.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "name": {
+      "type": "string",
+      "maxLength": 80,
+      "description": "A name for the profile, not for a person or a child."
+    },
+    "description": {
+      "type": "string",
+      "description": "What the profile is for. Must not contain names or anything about a child."
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "author_contributor_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The author's contributor id, the same rotating id used on votes. Never Household.id."
+    },
+    "age_band": {
+      "type": "string",
+      "enum": [
+        "under_7",
+        "7_to_12",
+        "13_to_15",
+        "16_plus"
+      ]
+    },
+    "tag_rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "tag",
+          "effect"
+        ],
+        "properties": {
+          "tag": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{1,40}$"
+          },
+          "effect": {
+            "type": "string",
+            "enum": [
+              "allow_always",
+              "allow",
+              "count_half",
+              "count_double",
+              "require_approval",
+              "block"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "rating_ceiling": {
+      "oneOf": [
+        {
+          "$ref": "https://kerb.dev/schema/0.1/rating_claim.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "default_allowance_minutes": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 1440
+      },
+      "description": "Seven values, index 0 is Monday (ISO weekday 1)."
+    },
+    "default_windows": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {
+        "type": "array",
+        "maxItems": 4,
+        "items": {
+          "type": "object",
+          "required": [
+            "start",
+            "end"
+          ],
+          "properties": {
+            "start": {
+              "type": "string",
+              "pattern": "^([01][0-9]|2[0-3]):(00|30)$",
+              "description": "Local time, 30 minute granularity."
+            },
+            "end": {
+              "type": "string",
+              "pattern": "^([01][0-9]|2[0-3]):(00|30)$",
+              "description": "Local time, 30 minute granularity."
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "description": "Seven values, index 0 is Monday (ISO weekday 1)."
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "version",
+    "age_band",
+    "tag_rules"
+  ],
+  "patternProperties": {
+    "^x_": {}
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kerb.dev/schema/0.1/rating_claim.json",
+  "title": "Rating claim",
+  "description": "An attributed age rating. A claim with provenance, never ground truth.",
+  "type": "object",
+  "properties": {
+    "organisation": {
+      "type": "string",
+      "enum": [
+        "PEGI",
+        "ESRB",
+        "USK",
+        "IARC",
+        "ACB",
+        "CERO",
+        "other"
+      ]
+    },
+    "value": {
+      "type": "string",
+      "maxLength": 16
+    },
+    "region": {
+      "type": "string",
+      "maxLength": 8
+    },
+    "source": {
+      "type": "string",
+      "format": "uri"
+    },
+    "retrieved_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}[Tt]\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?([Zz]|[+-]\\d{2}:\\d{2})$",
+      "description": "RFC 3339 with an explicit offset (Z or +hh:mm)."
+    }
+  },
+  "required": [
+    "organisation",
+    "value",
+    "source",
+    "retrieved_at"
+  ],
+  "patternProperties": {
+    "^x_": {}
+  },
+  "additionalProperties": true
+}
