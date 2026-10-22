@@ -5,13 +5,14 @@
     "at": "2026-10-21T20:05:00Z"
   },
   "lists": "css",
-  "title": "Handrail: parents in control, from the first tablet to independence",
+  "title": "Handrail: parents in control, one plan for every screen",
   "order": [
     "cover",
     "vision",
     "grows",
     "today",
     "solution",
+    "shape",
     "ban-leaks",
     "ban-protections",
     "sweden-now",
@@ -29,11 +30,11 @@
   ],
   "sections": {
     "vision": {
-      "description": "Parents in control: one plan, set once, that every device and app follows.",
+      "description": "Parents in control: one plan, set once, that every device and service follows.",
       "start": "cover"
     },
     "today": {
-      "description": "Where parents are today, and the same picture joined up by Handrail.",
+      "description": "Where parents are today, the same picture joined up by one plan, and what Handrail is and is not.",
       "start": "today"
     },
     "ban": {
