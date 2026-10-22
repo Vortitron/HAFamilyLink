@@ -285,7 +285,7 @@ Health values: `healthy`, `degraded`, `unknown`, `revoked`, with a human-readabl
 
 Later, if someone writes them: TimeLimit self-hosted server, OpenWrt ubus, Steam IParentalService (research spike first), iOS companion.
 
-Items 4 and 5 reach Google and Microsoft through noiwid's integrations, which sign in as the parent and use endpoints the vendors have not published. The proposal (docs/proposal/PROPOSAL.md, section 4.3) says a controller that does this is not covered by the certification mark, so these two enforcers sit outside the mark. They are off by default, appear only when the parent has installed noiwid's integration and ticks those entities in the config flow, and the child dashboard shows that the route exists. A build of the reference controller submitted for certification excludes them. They exist to show what the standard would let a parent do, and to retire the day the vendor offers a Level 4 endpoint.
+Items 4 and 5 reach Google and Microsoft through noiwid's integrations, which sign in as the parent and use endpoints the vendors have not published. The proposal (docs/proposal/PROPOSAL.md, "What a platform must do to comply") says a controller that does this is not covered by the certification mark, so these two enforcers sit outside the mark. They are off by default, appear only when the parent has installed noiwid's integration and ticks those entities in the config flow, and the child dashboard shows that the route exists. A build of the reference controller submitted for certification excludes them. They exist to show what the standard would let a parent do, and to retire the day the vendor offers a Level 4 endpoint.
 
 ### 5.2 Where a certified platform plugs in (Level 4)
 
