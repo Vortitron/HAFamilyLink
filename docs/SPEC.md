@@ -1,8 +1,8 @@
-# Kerb: an open household screen-time standard and Home Assistant integration
+# Kerb: an open household screen-time standard, with a Home Assistant reference controller
 
 Version 0.1, draft, 21 October 2026.
 
-Kerb is a small open standard for household screen time, a Home Assistant integration that implements it, and a later community layer for shared game and app tags. It is built backwards from two sentences a parent says out loud.
+Kerb is a small open standard for household screen time. It is not an app. A controller is any certified software that holds a child's plan and ledger: a vendor's own parent app once it is certified, an independent app or website, or a home hub. The Home Assistant integration in section 6 is the open-source reference controller, one of many, and a later community layer adds shared game and app tags. It is built backwards from two sentences a parent says out loud.
 
 "No screens for an hour."
 
@@ -35,7 +35,7 @@ The hard rule: the standard models what the parent wants, not what any vendor of
 1. Never trust a write. Google returns HTTP 200 for a no-op. Microsoft removed its lock endpoint and kept returning 201. Every write is followed by a read-back. Every operation carries three states: requested, applied, confirmed.
 2. Degrade to unknown, never to unlocked. A lost session or a dead endpoint makes the state unknown, raises an alert, and never shows the child as locked or free by guess.
 3. Capabilities are declared, not assumed. Every enforcer publishes what it can do. The controller composes the strongest available action per device and reports what was actually done.
-4. Children's data stays in the house. The standard carries no credentials, no location and no date of birth. Nothing leaves the household unless the parent opts in, and then only app keys and votes.
+4. Children's data stays in the house. The standard carries no vendor logins, passwords or session tokens, no location and no date of birth. Nothing leaves the household unless the parent opts in, and then only app keys and votes.
 
 ## 3. Data model
 
@@ -44,6 +44,8 @@ Seven core objects plus three supporting ones. All identifiers are UUIDs minted 
 ### 3.1 Household
 
 One per installation. Holds the time zone, the list of guardians (host user ids allowed to lock and grant), an optional parent PIN hash, and retention settings. The spec defines the shape. Which host user system fills `guardians` is up to the host.
+
+Portability. A household exports as one bundle in the standard format: its children, their policies, overrides still in force, ledgers within retention, the milestone summary and app keys. Host-specific fields (guardian ids, the PIN hash, enforcer config entries) are left out and made again on import. Every conforming controller must produce this bundle for any household it holds, whenever a guardian asks, and must accept a bundle produced by any other conforming controller. The bundle belongs to the household. A controller run by a vendor holds it only under the family's own account and uses it only to run the plan.
 
 ### 3.2 Child
 
@@ -186,9 +188,14 @@ respond_request(request_id, approve | deny, minutes)
 reconcile(child | all)
 get_capabilities(enforcer)
 delete_child(child)
+export_household() -> bundle
+import_household(bundle)
+transfer_control(child, platform, to_controller)
 ```
 
 `reconcile` forces a read-back from every enforcer. It runs after a restart and after a session repair. `delete_child` removes every record the controller holds about a child: the child, their devices, overrides and ledgers. Nothing about a child outlives the parent's decision to remove them.
+
+`export_household` and `import_household` move a whole household between controllers; an import followed by `reconcile` must leave every child with the same policy, the same overrides and the same ledger history. `transfer_control` hands one child on one platform to another controller: the platform starts taking the plan from the new controller and stops taking it from the old one, which keeps read access to the ledger but can no longer change anything. Each transfer is written to the ledger as an override with the guardian as actor, so the child sees it. After every platform has confirmed the transfer, the old controller deletes its copy of the household unless a guardian asked it to keep one.
 
 ### 4.3 Events
 
@@ -278,9 +285,15 @@ Health values: `healthy`, `degraded`, `unknown`, `revoked`, with a human-readabl
 
 Later, if someone writes them: TimeLimit self-hosted server, OpenWrt ubus, Steam IParentalService (research spike first), iOS companion.
 
+Items 4 and 5 reach Google and Microsoft through noiwid's integrations, which sign in as the parent and use endpoints the vendors have not published. The proposal (docs/proposal/PROPOSAL.md, section 4.3) says a controller that does this is not covered by the certification mark, so these two enforcers sit outside the mark. They are off by default, appear only when the parent has installed noiwid's integration and ticks those entities in the config flow, and the child dashboard shows that the route exists. A build of the reference controller submitted for certification excludes them. They exist to show what the standard would let a parent do, and to retire the day the vendor offers a Level 4 endpoint.
+
+### 5.2 Where a certified platform plugs in (Level 4)
+
+The enforcer class above is the controller's side of the standard. It wraps a device or vendor service that has no Kerb interface of its own, and it runs inside the controller. A platform that reaches Level 4 writes no enforcer. It exposes one authenticated endpoint per household that accepts the verbs in 4.2 and emits the events in 4.3, using the objects in section 3 and nothing else. Any certified controller, this one or a vendor's own app, talks to that endpoint the same way. That is what lets a parent set the plan from the app they already use, and what stops a vendor giving another company's controller fewer controls than its own.
+
 ## 6. Home Assistant integration
 
-Domain `kerb`. A custom component first, written to core quality standards. It plays the controller role and hosts enforcers as sub-entries. No vendor logins inside this integration. Vendor sessions stay inside noiwid's integrations and the Nintendo core integration.
+Domain `kerb`. A custom component first, written to core quality standards. It is the reference controller, one implementation of the controller role, and hosts enforcers as sub-entries. No vendor logins inside this integration. Vendor sessions stay inside noiwid's integrations and the Nintendo core integration.
 
 ### 6.1 Config flow
 
@@ -423,7 +436,9 @@ Children's data is the sensitive asset, so the defaults are the conservative one
 - Age band, never date of birth. No location. Family Link exposes location and this project does not read it.
 - Day ledgers and overrides are kept 31 days by default, then deleted. Usage samples are not persisted by the reference controller. Zero retention is valid. See 3.7.
 - Logs redact app and game titles unless debug logging is on, because a per-title log is a behaviour record of a child.
-- The standard carries no credentials. Enforcers hold them in their own config entries. The README and the parent guide state that HA backups contain Kerb's own storage file (ledgers with app keys per child, the PIN hash, guardian ids) and, once vendor paths exist, their session material, so backups are children's data and must be protected as such.
+- The standard carries no vendor logins, passwords or session tokens. Enforcers hold them in their own config entries.
+- Controller credential. Where a platform accepts a plan directly (Level 4), the controller presents a credential issued by the steward and bound to the household through the guardian's existing platform family account, once per platform. The platform verifies a signature and never asks the parent to log in to anything else. The steward can revoke it; a revoked controller is treated as `revoked` health and the platform falls back to what the law requires of it. The README and the parent guide state that HA backups contain Kerb's own storage file (ledgers with app keys per child, the PIN hash, guardian ids) and, once vendor paths exist, their session material, so backups are children's data and must be protected as such.
+- Moving is a right. A household can leave any controller at any time and take everything with it (3.1, 4.2). The conformance suite tests export from one controller and import into another; a controller that fails it is not conforming.
 - Fail closed for state, fail honest for control. Unknown is shown as unknown and raises a repair.
 - Every override logs who or what created it. The ledger is the audit trail a parent can show a child.
 - Vendor terms. The README states that the Family Link and Family Safety paths rely on third-party integrations that may breach vendor terms and could stop working. Network and power are the recommended default.
